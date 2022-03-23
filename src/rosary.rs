@@ -1,3 +1,5 @@
+use core::num::flt2dec::Sign;
+use std::fs;
 use chrono::{Datelike, Weekday};
 use crate::language::ordinal;
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
@@ -5,6 +7,7 @@ use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPr
 
 pub const ROSARY_CROSS: &str = "🕇✝♱✟🕆✞";
 pub const ROSARY_BEAD: &str = "•";
+pub const PRAYER_DIR: &str = "preces/latine";
 
 pub enum Mysteries {
     Joyful,
@@ -32,6 +35,31 @@ pub enum Prayer {
     FourthMystery,
     FifthMystery,
     FinalPrayer
+}
+
+impl Prayer {
+    /// Return corresponding file name
+    fn get_file(&self) -> &str {
+        match self {
+            SignOfCross => "signum_crucis",
+            ApostlesCreed => "symbolum_apostolorum",
+            OurFather => "pater_noster",
+            HailMary
+                | HailMaryFaith
+                | HailMaryHope
+                | HailMaryCharity => "ave_maria",
+            GloryBe => "gloria_patri",
+            FatimaOMyJesus => "oratio_fatimae",
+            HailHolyQueen => "salve_regina",
+            FinalPrayer => "oratio_ad_finem_rosarii",
+            _ => ""
+        }
+    }
+
+    pub fn get_prayer_text(&self) -> String {
+        fs::read_to_string(PRAYER_DIR + "/" + self.get_file())
+            .expect("Unable to read file.")
+    }
 }
 
 impl ToString for Mysteries {
