@@ -114,17 +114,18 @@ impl Rosary {
                     2 => vec![HailMaryFaith],
                     3 => vec![HailMaryHope],
                     4 => vec![HailMaryCharity],
-                    5 => vec![GloryBe, FirstMystery, OurFather],
+                    5 => vec![GloryBe],
+                    6 => vec![FirstMystery, OurFather],
                     _ => {vec![]}
                 }
             },
             i if i <= 5 => {
                 match self.bead {
                     0 => vec![match self.decade {
-                        1 => SecondMystery,
-                        2 => ThirdMystery,
-                        3 => FourthMystery,
-                        4 => FifthMystery,
+                        2 => SecondMystery,
+                        3 => ThirdMystery,
+                        4 => FourthMystery,
+                        5 => FifthMystery,
                         _ => Prayer::None
                     }],
                     i if i>=1 && i<=10 => vec![HailMary],
@@ -143,8 +144,8 @@ impl Rosary {
         match self.decade {
             0 => {
                 match self.bead {
-                    i if i <= 4 => self.bead += 1,
-                    5 => {self.decade = 1; self.bead = 0;},
+                    i if i <= 5 => self.bead += 1,
+                    6 => {self.decade = 1; self.bead = 1;},
                     _ => {}
                 }
             }
@@ -154,7 +155,11 @@ impl Rosary {
                     j if j < 11 => self.bead += 1,
                     11 => {
                         if self.decade < 5 {
-                            self.decade += 1; self.bead = 0;
+                            self.decade += 1; if self.decade == 1 {
+                                self.bead = 1;
+                            } else {
+                                self.bead = 0;
+                            }
                         } else {
                             self.bead += 1;
                         }
@@ -171,7 +176,7 @@ impl Rosary {
             0 => {
                 match self.bead {
                     0 => {}
-                    i if i > 0 && i <= 5 => self.bead -= 1,
+                    i if i > 0 && i <= 6 => self.bead -= 1,
                     _ => {}
                 }
             }
@@ -180,9 +185,16 @@ impl Rosary {
                     0 => {self.decade -= 1; if self.decade > 0 {
                         self.bead = 11;
                     } else {
-                        self.bead = 5;
+                        self.bead = 6;
                     }},
-                    j if j <= 12 => self.bead -= 1,
+                    j if j <= 12 => {
+                        if self.decade == 1 && self.bead == 1 {
+                            self.decade -= 1;
+                            self.bead = 6;
+                        } else {
+                            self.bead -= 1
+                        }
+                    },
                     _ => {}
                 }
             }
@@ -193,21 +205,25 @@ impl Rosary {
     pub fn progress(&self) -> String {
         let location;
         if self.decade == 0 && self.bead == 0 {
-            location = String::from("crucifix");
-        } else if self.decade == 0 && (self.bead == 1 || self.bead == 5) {
-            location = format!("{} bead", ordinal(self.bead));
+            location = String::from("the crucifix");
+        } else if self.decade == 0 && self.bead == 1 {
+            location = format!("the {} bead", ordinal(self.bead));
+        } else if self.decade == 0 && self.bead == 5 {
+            location = String::from("after the triplet");
+        } else if self.decade == 0 && self.bead == 6 {
+            location = format!("the {} bead", ordinal(self.bead - 1));
         } else if self.decade == 0 && self.bead > 1 && self.bead <= 4 {
-            location = format!("{} bead of the triplet", ordinal(self.bead - 1));
+            location = format!("the {} bead of the triplet", ordinal(self.bead - 1));
         } else if self.bead == 0 {
             location = format!("before the {} decade", ordinal(self.decade));
         } else if self.bead == 11 {
             location = format!("after the {} decade", ordinal(self.decade));
         } else if self.bead == 12 {
-            location = String::from("closing prayer");
+            location = String::from("the closing prayer");
         } else {
-            location = format!("{} bead of the {} decade", ordinal(self.bead), ordinal(self.decade))
+            location = format!("the {} bead of the {} decade", ordinal(self.bead), ordinal(self.decade))
         }
-        format!("Praying the {}.", location)
+        format!("Praying {}.", location)
     }
 
     pub fn get_decade(&self) -> u8 {
