@@ -134,8 +134,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 KeyCode::Char('r') => active_menu_item = MenuItem::Rosary,
                 KeyCode::Char('s') => active_menu_item = MenuItem::Settings,
-                KeyCode::Char(' ') => {rosary.advance(); render_progress(&rosary);},
-                KeyCode::Down => {}
+                KeyCode::Char(' ') => advance(&mut rosary),
+                KeyCode::Right => advance(&mut rosary),
+                KeyCode::Backspace => recede(&mut rosary),
+                KeyCode::Left => recede(&mut rosary),
                 KeyCode::Up => {}
                 _ => {}
             },
@@ -144,6 +146,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+fn advance(rosary: &mut Rosary) {
+    rosary.advance();
+    render_progress(&rosary);
+}
+
+fn recede(rosary: &mut Rosary) {
+    rosary.recede();
+    render_progress(&rosary);
 }
 
 fn render_prayer<'a>(rosary: &Rosary) -> Paragraph<'a> {

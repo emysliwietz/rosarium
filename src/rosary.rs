@@ -1,4 +1,3 @@
-use core::num::flt2dec::Sign;
 use std::fs;
 use chrono::{Datelike, Weekday};
 use crate::language::ordinal;
@@ -57,7 +56,7 @@ impl Prayer {
     }
 
     pub fn get_prayer_text(&self) -> String {
-        fs::read_to_string(PRAYER_DIR + "/" + self.get_file())
+        fs::read_to_string(PRAYER_DIR.to_owned() + "/" + self.get_file())
             .expect("Unable to read file.")
     }
 }
@@ -95,6 +94,7 @@ Other Sundays  GLORIOUS
      */
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Rosary {
     decade: u8,
     bead: u8,
@@ -143,7 +143,7 @@ impl Rosary {
         match self.decade {
             0 => {
                 match self.bead {
-                    i if i >= 0 && i <= 4 => self.bead += 1,
+                    i if i <= 4 => self.bead += 1,
                     5 => {self.decade = 1; self.bead = 0;},
                     _ => {}
                 }
@@ -166,8 +166,28 @@ impl Rosary {
         }
     }
 
-    fn recede(&mut self) {
-
+    pub fn recede(&mut self) {
+        match self.decade {
+            0 => {
+                match self.bead {
+                    0 => {}
+                    i if i > 0 && i <= 5 => self.bead -= 1,
+                    _ => {}
+                }
+            }
+            i if i <= 5 => {
+                match self.bead {
+                    0 => {self.decade -= 1; if self.decade > 0 {
+                        self.bead = 11;
+                    } else {
+                        self.bead = 5;
+                    }},
+                    j if j <= 12 => self.bead -= 1,
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
     }
 
     pub fn progress(&self) -> String {
@@ -188,5 +208,13 @@ impl Rosary {
             location = format!("{} bead of the {} decade", ordinal(self.bead), ordinal(self.decade))
         }
         format!("Praying the {}.", location)
+    }
+
+    pub fn get_decade(&self) -> u8 {
+        self.decade
+    }
+
+    pub fn get_bead(&self) -> u8 {
+        self.bead
     }
 }
