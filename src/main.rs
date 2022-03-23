@@ -21,6 +21,9 @@ use tui::{
     },
     Terminal,
 };
+use tui::layout::Constraint::Percentage;
+use tui::symbols::line::{CROSS, THICK_CROSS};
+use rosarium::rosary::{get_daily_mystery, Rosary, ROSARY_BEAD, ROSARY_CROSS};
 use rosarium::tui::event_loop;
 
 #[derive(Copy, Clone, Debug)]
@@ -47,6 +50,7 @@ impl From<MenuItem> for usize {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode().expect("can run in raw mode");
 
+    let mut rosary = Rosary::new();
 
     // Event loop
     let (tx, rx) = mpsc::channel();
@@ -91,49 +95,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .margin(1)
                 .constraints(
                     [
-                        Constraint::Length(3),
                         Constraint::Min(2),
+                        Constraint::Length(3),
                     ]
                         .as_ref(),
                 )
                 .split(size);
 
-            // style menu bar titles
-            let menu = menu_titles
-                .iter()
-                .map(|t| {
-                    let (first, rest) = t.split_at(1);
-                    Spans::from(vec![
-                        Span::styled(
-                            first,
-                            Style::default()
-                                .fg(Color::Yellow)
-                                .add_modifier(Modifier::UNDERLINED),
-                        ),
-                        Span::styled(rest, Style::default().fg(Color::White)),
-                    ])
-                })
-                .collect();
+            let bottom_bar = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref(),)
+                .split(chunks[1]);
 
-            // draw menu bar
-            let tabs = Tabs::new(menu)
-                .select(active_menu_item.into())
-                .block(Block::default().title("Menu").borders(Borders::ALL))
-                .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().fg(Color::Yellow))
-                .divider(Span::raw("|"));
+            rect.render_widget(render_progress(&rosary), bottom_bar[0]);
+            rect.render_widget(render_mysteries(), bottom_bar[1]);
 
             // render current tab
-            rect.render_widget(tabs, chunks[0]);
             match active_menu_item {
-                MenuItem::Rosary => rect.render_widget(render_rosary(), chunks[1]),
+                MenuItem::Rosary => rect.render_widget(render_prayer(&rosary), chunks[0]),
                 MenuItem::Settings => {
                     let pets_chunks = Layout::default()
                         .direction(Direction::Horizontal)
                         .constraints(
                             [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
                         )
-                        .split(chunks[1]);
+                        .split(chunks[0]);
                 }
             }
         })?;
@@ -148,8 +134,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 KeyCode::Char('r') => active_menu_item = MenuItem::Rosary,
                 KeyCode::Char('s') => active_menu_item = MenuItem::Settings,
-                KeyCode::Char('a') => {}
-                KeyCode::Char('d') => {}
+                KeyCode::Char(' ') => {rosary.advance(); render_progress(&rosary);},
                 KeyCode::Down => {}
                 KeyCode::Up => {}
                 _ => {}
@@ -161,10 +146,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn render_rosary<'a>() -> Paragraph<'a> {
+fn render_prayer<'a>(rosary: &Rosary) -> Paragraph<'a> {
     let rosarium = Paragraph::new(vec![
         Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw("Rosarium")]),
+        Spans::from(vec![Span::raw(format!("{:?}", rosary.to_prayer()))]),
     ])
         .alignment(Alignment::Center)
         .block(
@@ -175,6 +160,32 @@ fn render_rosary<'a>() -> Paragraph<'a> {
                 .border_type(BorderType::Rounded),
         );
     rosarium
+}
+
+fn render_progress<'a>(rosary: &Rosary) -> Paragraph<'a> {
+    let progress = Paragraph::new(rosary.progress())
+        .alignment(Alignment::Right)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .title("Progress")
+                .border_type(BorderType::Rounded)
+        );
+    progress
+}
+
+fn render_mysteries<'a>() -> Paragraph<'a> {
+    let progress = Paragraph::new(get_daily_mystery())
+        .alignment(Alignment::Right)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .title("Mystery")
+                .border_type(BorderType::Rounded)
+        );
+    progress
 }
 
 /*
