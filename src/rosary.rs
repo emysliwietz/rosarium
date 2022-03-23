@@ -15,7 +15,7 @@ pub enum Mysteries {
     Luminous
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Prayer {
     None,
     SignOfCross,
@@ -96,16 +96,27 @@ Other Sundays  GLORIOUS
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Rosary {
+    /// current decade
     decade: u8,
+    /// current bead within decade
     bead: u8,
+    /// current prayer in case of multiple prayers per bead
+    /// starts at 1, not 0
+    prayer: u8,
+    /// number of prayers on the current bead
+    num_prayer: u8,
 }
 
 impl Rosary {
     pub fn new() -> Rosary {
-        Rosary { decade: 0, bead: 0}
+        Rosary { decade: 0, bead: 0, prayer: 1, num_prayer: 2}
     }
 
-    pub fn to_prayer(&self) -> Vec<Prayer> {
+    pub fn to_prayer(&self) -> Prayer {
+        self.prayers_for_bead()[(self.prayer - 1) as usize].clone()
+    }
+
+    fn prayers_for_bead(&self) -> Vec<Prayer> {
         match self.decade {
             0 => {
                 match self.bead {
@@ -141,6 +152,14 @@ impl Rosary {
     }
 
     pub fn advance(&mut self) {
+        if self.prayer < self.num_prayer {
+            self.prayer += 1;
+            return;
+        }
+
+        let old_bead = self.bead;
+        let old_decade = self.decade;
+
         match self.decade {
             0 => {
                 match self.bead {
@@ -169,9 +188,22 @@ impl Rosary {
             }
             _ => {}
         }
+
+        if self.decade != old_decade || self.bead != old_bead {
+            self.prayer = 1;
+            self.num_prayer = self.prayers_for_bead().len() as u8;
+        }
     }
 
     pub fn recede(&mut self) {
+        if self.prayer > 1 {
+            self.prayer -= 1;
+            return;
+        }
+
+        let old_bead = self.bead;
+        let old_decade = self.decade;
+
         match self.decade {
             0 => {
                 match self.bead {
@@ -199,6 +231,11 @@ impl Rosary {
                 }
             }
             _ => {}
+        }
+
+        if self.decade != old_decade || self.bead != old_bead {
+            self.num_prayer = self.prayers_for_bead().len() as u8;
+            self.prayer = self.num_prayer;
         }
     }
 
@@ -232,5 +269,9 @@ impl Rosary {
 
     pub fn get_bead(&self) -> u8 {
         self.bead
+    }
+
+    pub fn get_curr_prayer(&self) -> String {
+        format!("{}/{}", self.prayer, self.num_prayer)
     }
 }
