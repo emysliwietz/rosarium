@@ -2,7 +2,7 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use chrono::{Datelike, Weekday};
-use crate::config::{PRAYER_DIR, TITLE_FILE};
+use crate::config::{MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
 use crate::language::{ordinal_n_acc, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, OurFather, SecondMystery, SignOfCross, ThirdMystery};
@@ -38,25 +38,30 @@ pub enum Prayer {
 
 impl Prayer {
     /// Return corresponding file name
-    fn get_file(&self) -> &str {
+    fn get_file(&self) -> String {
         match self {
-            SignOfCross => "signum_crucis",
-            ApostlesCreed => "symbolum_apostolorum",
-            OurFather => "pater_noster",
+            SignOfCross => String::from("signum_crucis"),
+            ApostlesCreed => String::from("symbolum_apostolorum"),
+            OurFather => String::from("pater_noster"),
             HailMary
                 | HailMaryFaith
                 | HailMaryHope
-                | HailMaryCharity => "ave_maria",
-            GloryBe => "gloria_patri",
-            FatimaOMyJesus => "oratio_fatimae",
-            HailHolyQueen => "salve_regina",
-            FinalPrayer => "oratio_ad_finem_rosarii",
-            _ => ""
+                | HailMaryCharity => String::from("ave_maria"),
+            GloryBe => String::from("gloria_patri"),
+            FatimaOMyJesus => String::from("oratio_fatimae"),
+            HailHolyQueen => String::from("salve_regina"),
+            FinalPrayer => String::from("oratio_ad_finem_rosarii"),
+            FirstMystery => get_daily_mystery_file("I"),
+            SecondMystery => get_daily_mystery_file("II"),
+            ThirdMystery => get_daily_mystery_file("III"),
+            FourthMystery => get_daily_mystery_file("IV"),
+            FifthMystery => get_daily_mystery_file("V"),
+            _ => String::from("")
         }
     }
 
     pub fn get_prayer_text(&self) -> String {
-        let file = PRAYER_DIR.to_owned() + "/" + self.get_file();
+        let file = PRAYER_DIR.to_owned() + "/" + &self.get_file();
         fs::read_to_string(&file)
             .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file))
     }
@@ -109,6 +114,10 @@ pub fn get_daily_mystery() -> String {
 Sundays of Lent  SORROWFUL
 Other Sundays  GLORIOUS
      */
+}
+
+pub fn get_daily_mystery_file(latin_numeral: &str) -> String {
+    String::from(MYSTERY_DIR) + "/" + &get_daily_mystery().to_lowercase().replace(" ", "_") + "_" + latin_numeral
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

@@ -11,3 +11,27 @@ sanctus: Sanctus
 signum_crucis: Signum Crucis
 symbolum_apostolorum: Symbolum Apostolorum
 symbolum_nicaenum: Symbolum Nicaenum
+
+mysteria/mysteria_gaudiosa_I: Annuntiatio Gabrielis Archangeli ad Beatam Mariam Virginem
+mysteria/mysteria_gaudiosa_II: Visitatio Beatae Mariae Virginis ad Elisabeth
+mysteria/mysteria_gaudiosa_III: Nativitas Domini Nostri Iesu Christi
+mysteria/mysteria_gaudiosa_IV: Presentatio Iesu Infantis in templo
+mysteria/mysteria_gaudiosa_V: Inventio Iesu in templo
+
+mysteria/mysteria_luminosa_I: Baptisma in flumine Iordano
+mysteria/mysteria_luminosa_II: Revelatio sui ipsius ad nuptias Cananenses
+mysteria/mysteria_luminosa_III: Regni Dei proclamatio simul cum invitatio ad conversionem
+mysteria/mysteria_luminosa_IV: Transfiguratio
+mysteria/mysteria_luminosa_V: Eucharistiae institutio
+
+mysteria/mysteria_dolorosa_I: Agonia Iesu in horto Gethsemanie
+mysteria/mysteria_dolorosa_II: Flagellatio Iesu
+mysteria/mysteria_dolorosa_III: Coronatio Iesu spinis
+mysteria/mysteria_dolorosa_IV: Portatio crucis suae a Iesu
+mysteria/mysteria_dolorosa_V: Crucifixio Iesu
+
+mysteria/mysteria_gloriosa_I: Resurrectio Iesu
+mysteria/mysteria_gloriosa_II: Eius in caelum ascensio
+mysteria/mysteria_gloriosa_III: Descensio Sancti Spiritus super Mariam et Apostolos
+mysteria/mysteria_gloriosa_IV: Assumptio Beatae Mariae Virginis in caelum
+mysteria/mysteria_gloriosa_V: Coronatio Beatae Mariae Virginis in reginam caeli
