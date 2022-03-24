@@ -27,7 +27,7 @@ use tui::text::Text;
 use tui::widgets::Wrap;
 use rosarium::rosary::{get_daily_mystery, Rosary};
 use rosarium::rosary::Prayer::{FirstMystery, FourthMystery, SecondMystery, ThirdMystery};
-use rosarium::tui::{Window};
+use rosarium::tui::{center, Window};
 
 #[derive(Copy, Clone, Debug)]
 enum MenuItem {
@@ -190,8 +190,13 @@ fn scroll_right(window: &mut Window, rosary: &Rosary) {
 
 fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     let rosary_prayer = rosary.to_prayer();
-    let prayer_text = Text::from(rosary_prayer.get_prayer_text(rosary));
-    let prayer_title = rosary_prayer.get_prayer_title();
+    let mut prayer_words = rosary_prayer.get_prayer_text(rosary);
+    let mut prayer_title = rosary_prayer.get_prayer_title();
+    if rosary_prayer.is_mystery() {
+        prayer_title = center(&prayer_title, window);
+        prayer_words = center(&prayer_words, &window);
+    }
+    let prayer_text = Text::from(prayer_words);
     let top_offset = window.get_top_offset(prayer_text.height() + 3);
     let mut centered_prayer_text = Text::raw(String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset));
     let prayer_width = centered_prayer_text.width();
@@ -205,7 +210,7 @@ fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     let rosarium = Paragraph::new(
         centered_prayer_text
     )
-        .wrap(Wrap { trim: true })
+        .wrap(Wrap { trim: false })
         .scroll(window.get_offset())
         .block(
             Block::default()

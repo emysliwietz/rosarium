@@ -1,20 +1,21 @@
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+
 use chrono::{Datelike, Weekday};
 use tui::style::Color;
+
 use crate::config::{MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
 use crate::language::{ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, SecondMystery, SignOfCross, ThirdMystery};
-
 
 #[derive(Debug)]
 pub enum Mysteries {
     Joyful,
     Sorrowful,
     Glorious,
-    Luminous
+    Luminous,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -36,7 +37,7 @@ pub enum Prayer {
     FourthMystery,
     FifthMystery,
     Laudetur,
-    FinalPrayer
+    FinalPrayer,
 }
 
 impl Prayer {
@@ -47,9 +48,9 @@ impl Prayer {
             ApostlesCreed => String::from("symbolum_apostolorum"),
             OurFather => String::from("pater_noster"),
             HailMary
-                | HailMaryFaith
-                | HailMaryHope
-                | HailMaryCharity => String::from("ave_maria"),
+            | HailMaryFaith
+            | HailMaryHope
+            | HailMaryCharity => String::from("ave_maria"),
             GloryBe => String::from("gloria_patri"),
             FatimaOMyJesus => String::from("oratio_fatimae"),
             HailHolyQueen => String::from("salve_regina"),
@@ -105,16 +106,16 @@ impl Prayer {
             if line.starts_with(&(String::from(self.get_file()) + ":")) {
                 let title = String::from(line.split(":").nth(1).unwrap_or("no title found"));
                 return match self {
-                    FirstMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(1), title),
-                    SecondMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(2), title),
-                    ThirdMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(3), title),
-                    FourthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(4), title),
-                    FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title),
+                    FirstMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(1), title.trim()),
+                    SecondMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(2), title.trim()),
+                    ThirdMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(3), title.trim()),
+                    FourthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(4), title.trim()),
+                    FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title.trim()),
                     HailMaryFaith => format!("{} {}", title, "pro fide"),
                     HailMaryHope => format!("{} {}", title, "pro spe"),
-                    HailMaryCharity => format!("{} {}", title, "pro caritate"),
+                    HaiWhlMaryCharity => format!("{} {}", title, "pro caritate"),
                     _ => title
-                }
+                };
             }
         }
         format!("No title found for prayer {}", self.get_file())
@@ -155,7 +156,7 @@ fn get_mysteries_file() -> String {
             Sorrowful => "doloris",
             Glorious => "gloriae",
             Luminous => "lucis"
-    } + "_mysteria"
+        } + "_mysteria"
 }
 
 pub fn get_daily_mystery() -> String {
@@ -186,7 +187,7 @@ pub struct Rosary {
 
 impl Rosary {
     pub fn new() -> Rosary {
-        Rosary { decade: 0, bead: 0, prayer: 1, num_prayer: 2}
+        Rosary { decade: 0, bead: 0, prayer: 1, num_prayer: 2 }
     }
 
     pub fn to_prayer(&self) -> Prayer {
@@ -204,9 +205,9 @@ impl Rosary {
                     4 => vec![HailMaryCharity],
                     5 => vec![GloryBe],
                     6 => vec![FirstMystery, OurFather],
-                    _ => {vec![]}
+                    _ => { vec![] }
                 }
-            },
+            }
             i if i <= 5 => {
                 match self.bead {
                     0 => vec![match self.decade {
@@ -216,15 +217,15 @@ impl Rosary {
                         5 => FifthMystery,
                         _ => Prayer::None
                     }, OurFather],
-                    i if i>=1 && i<=10 => vec![HailMary],
+                    i if i >= 1 && i <= 10 => vec![HailMary],
                     11 => vec![GloryBe, FatimaOMyJesus],
                     12 => if self.decade == 5 {
                         vec![HailHolyQueen, FinalPrayer, Laudetur, SignOfCross]
-                    } else {vec![]}
-                    _ => {vec![]}
+                    } else { vec![] }
+                    _ => { vec![] }
                 }
-            },
-            _ => {vec![]}
+            }
+            _ => { vec![] }
         }
     }
 
@@ -241,17 +242,21 @@ impl Rosary {
             0 => {
                 match self.bead {
                     i if i <= 5 => self.bead += 1,
-                    6 => {self.decade = 1; self.bead = 1;},
+                    6 => {
+                        self.decade = 1;
+                        self.bead = 1;
+                    }
                     _ => {}
                 }
             }
             i if i <= 5 => {
                 match self.bead {
-                    0 => self.bead+=1,
+                    0 => self.bead += 1,
                     j if j < 11 => self.bead += 1,
                     11 => {
                         if self.decade < 5 {
-                            self.decade += 1; if self.decade == 1 {
+                            self.decade += 1;
+                            if self.decade == 1 {
                                 self.bead = 1;
                             } else {
                                 self.bead = 0;
@@ -259,7 +264,7 @@ impl Rosary {
                         } else {
                             self.bead += 1;
                         }
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -291,11 +296,14 @@ impl Rosary {
             }
             i if i <= 5 => {
                 match self.bead {
-                    0 => {self.decade -= 1; if self.decade > 0 {
-                        self.bead = 11;
-                    } else {
-                        self.bead = 6;
-                    }},
+                    0 => {
+                        self.decade -= 1;
+                        if self.decade > 0 {
+                            self.bead = 11;
+                        } else {
+                            self.bead = 6;
+                        }
+                    }
                     j if j <= 12 => {
                         if self.decade == 1 && self.bead == 1 {
                             self.decade -= 1;
@@ -303,7 +311,7 @@ impl Rosary {
                         } else {
                             self.bead -= 1
                         }
-                    },
+                    }
                     _ => {}
                 }
             }

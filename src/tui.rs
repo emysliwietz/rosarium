@@ -85,5 +85,20 @@ impl Window {
         self.parent_w = w;
         self.parent_h = h;
     }
+
+    pub fn get_y(&self) -> u16 {
+        self.y
+    }
 }
 
+pub fn center(text: &String, window: &Window) -> String {
+    let mut text_width = 0;
+    for line in text.lines() {
+        if text_width < line.len() {
+            text_width = line.len();
+        }
+    }
+    let v_offset = window.get_vert_offset(text_width);
+    let offset_string = (" ".repeat(v_offset));
+    offset_string.clone() + &text.replace("\n", &("\n".to_owned() + &offset_string))
+}
