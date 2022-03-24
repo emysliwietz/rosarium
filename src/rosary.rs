@@ -74,14 +74,23 @@ impl Prayer {
             Glorious => Color::LightMagenta,
             Sorrowful => Color::Red,
             Joyful => Color::Magenta,
-            _ => Color::White
         }
     }
 
-    pub fn get_prayer_text(&self) -> String {
+    pub fn get_prayer_text(&self, rosary: &Rosary) -> String {
         let file = PRAYER_DIR.to_owned() + "/" + &self.get_file();
-        fs::read_to_string(&file)
-            .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file))
+        let text = fs::read_to_string(&file)
+            .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file));
+        if self == &HailMary {
+            let mystery_addition = fs::read_to_string(PRAYER_DIR.to_owned() + "/" + &get_mysteries_file());
+            if mystery_addition.is_ok() {
+                let mystery_addition = mystery_addition.unwrap();
+                let mut mystery_additions = mystery_addition.split("\n");
+                mystery_additions.advance_by((rosary.decade - 1) as usize);
+                return text.replace("Jesus.", &format!("Jesus,\n{}.", mystery_additions.next().unwrap_or("")));
+            }
+        }
+        text
     }
 
     pub fn get_prayer_title(&self) -> String {
@@ -137,6 +146,16 @@ fn get_daily_mystery_enum() -> Mysteries {
         Weekday::Sat => Joyful,
         Weekday::Sun => Glorious
     }
+}
+
+fn get_mysteries_file() -> String {
+    String::from(MYSTERY_DIR) + "/" +
+        match get_daily_mystery_enum() {
+            Joyful => "gaudii",
+            Sorrowful => "doloris",
+            Glorious => "gloriae",
+            Luminous => "lucis"
+    } + "_mysteria"
 }
 
 pub fn get_daily_mystery() -> String {

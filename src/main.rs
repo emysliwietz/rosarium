@@ -141,8 +141,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Char(' ') => advance(&mut rosary),
                 KeyCode::Char('l') => advance(&mut rosary),
                 KeyCode::Char('h') => recede(&mut rosary),
-                KeyCode::Char('j') => scroll_down(&mut window, &rosary),
-                KeyCode::Char('k') => scroll_up(&mut window, &rosary),
+                KeyCode::Char('k') => scroll_down(&mut window, &rosary),
+                KeyCode::Char('j') => scroll_up(&mut window, &rosary),
                 KeyCode::Char('H') => scroll_left(&mut window, &rosary),
                 KeyCode::Char('L') => scroll_right(&mut window, &rosary),
                 KeyCode::Right => advance(&mut rosary),
@@ -190,7 +190,7 @@ fn scroll_right(window: &mut Window, rosary: &Rosary) {
 
 fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     let rosary_prayer = rosary.to_prayer();
-    let prayer_text = Text::from(rosary_prayer.get_prayer_text());
+    let prayer_text = Text::from(rosary_prayer.get_prayer_text(rosary));
     let prayer_title = rosary_prayer.get_prayer_title();
     let top_offset = window.get_top_offset(prayer_text.height() + 3);
     let mut centered_prayer_text = Text::raw(String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset));

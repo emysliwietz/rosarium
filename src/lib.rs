@@ -1,3 +1,4 @@
+#![feature(iter_advance_by)]
 extern crate core;
 
 pub mod tui;
