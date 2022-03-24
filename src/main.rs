@@ -161,6 +161,7 @@ fn recede(rosary: &mut Rosary) {
 }
 
 fn render_prayer<'a>(rosary: &Rosary) -> Paragraph<'a> {
+    //todo!("Add title of prayer in bold");
     let rosarium = Paragraph::new(
         Text::from(String::from("\n") + &rosary.to_prayer().get_prayer_text())
     )
@@ -184,7 +185,7 @@ fn render_progress<'a>(rosary: &Rosary) -> Paragraph<'a> {
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
-                .title("Progress")
+                .title("Oratio")
                 .border_type(BorderType::Rounded)
         );
     progress
@@ -197,7 +198,7 @@ fn render_mysteries<'a>() -> Paragraph<'a> {
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
-                .title("Mystery")
+                .title("Mysteria Rosarii")
                 .border_type(BorderType::Rounded)
         );
     progress

@@ -1,6 +1,6 @@
 use std::fs;
 use chrono::{Datelike, Weekday};
-use crate::language::ordinal;
+use crate::language::{ordinal_n_acc, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, OurFather, SecondMystery, SignOfCross, ThirdMystery};
 
@@ -65,13 +65,13 @@ impl Prayer {
 impl ToString for Mysteries {
     fn to_string(&self) -> String {
         let mystery_adj = match self {
-            Joyful => "Joyful",
-            Sorrowful => "Sorrowful",
-            Glorious => "Glorious",
-            Luminous => "Luminous"
+            Joyful => "Gaudiosa",
+            Sorrowful => "Dolorosa",
+            Glorious => "Gloriosa",
+            Luminous => "Gaudiosa"
         };
 
-        format!("{} Mystery of the Rosary", mystery_adj)
+        format!("Mysteria {}", mystery_adj)
     }
 }
 
@@ -243,25 +243,25 @@ impl Rosary {
     pub fn progress(&self) -> String {
         let location;
         if self.decade == 0 && self.bead == 0 {
-            location = String::from("the crucifix");
+            location = String::from("ad crucifixum");
         } else if self.decade == 0 && self.bead == 1 {
-            location = format!("the {} bead", ordinal(self.bead));
+            location = format!("ad {} granum", ordinal_n_acc(self.bead));
         } else if self.decade == 0 && self.bead == 5 {
-            location = String::from("after the triplet");
+            location = String::from("post tergeminum granum");
         } else if self.decade == 0 && self.bead == 6 {
-            location = format!("the {} bead", ordinal(self.bead - 1));
+            location = format!("ad {} granum", ordinal_n_acc(self.bead - 1));
         } else if self.decade == 0 && self.bead > 1 && self.bead <= 4 {
-            location = format!("the {} bead of the triplet", ordinal(self.bead - 1));
+            location = format!("ad {} granum tergemini grani", ordinal_n_acc(self.bead - 1));
         } else if self.bead == 0 {
-            location = format!("before the {} decade", ordinal(self.decade));
+            location = format!("ante {} decennium", ordinal_n_acc(self.decade));
         } else if self.bead == 11 {
-            location = format!("after the {} decade", ordinal(self.decade));
+            location = format!("post {} decennium", ordinal_n_acc(self.decade));
         } else if self.bead == 12 {
-            location = String::from("the closing prayer");
+            location = String::from("ad finem rosarii");
         } else {
-            location = format!("the {} bead of the {} decade", ordinal(self.bead), ordinal(self.decade))
+            location = format!("ad {} granum {} decennii", ordinal_n_acc(self.bead), ordinal_n_gen(self.decade))
         }
-        format!("Praying {}.", location)
+        format!("Oratio {}.", location)
     }
 
     pub fn get_decade(&self) -> u8 {
