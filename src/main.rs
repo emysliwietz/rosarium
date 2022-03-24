@@ -113,6 +113,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             rect.render_widget(render_progress(&rosary), bottom_bar[0]);
             rect.render_widget(render_mysteries(), bottom_bar[1]);
 
+            window.set_parent_dims(chunks[0].width, chunks[0].height);
+
             // render current tab
             match active_menu_item {
                 MenuItem::Rosary => rect.render_widget(render_prayer(&rosary, &window), chunks[0]),
@@ -177,8 +179,12 @@ fn scroll_up(window: &mut Window, rosary: &Rosary) {
 
 fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     //todo!("Add title of prayer in bold");
+    let prayer_text = Text::from(rosary.to_prayer().get_prayer_text());
+    let top_offset = window.get_top_offset(prayer_text.height());
+    let mut centered_prayer_text = Text::raw("\n".repeat(top_offset));
+    centered_prayer_text.extend(prayer_text);
     let rosarium = Paragraph::new(
-        Text::from(String::from("\n") + &rosary.to_prayer().get_prayer_text())
+        centered_prayer_text
     )
         .style(Style::default().add_modifier(Modifier::ITALIC))
         .alignment(Alignment::Center)

@@ -25,16 +25,27 @@ use tui::{
 pub struct Window {
     x: u16,
     y: u16,
-    lang: &'static str
+    lang: &'static str,
+    parent_h: u16,
+    parent_w: u16
 }
 
 impl Window {
     pub fn new() -> Window {
-        Window {x: 0, y: 0, lang: "latina"}
+        Window {x: 0, y: 0, lang: "latina", parent_h: 0, parent_w: 0}
     }
 
     pub fn get_offset(&self) -> (u16, u16) {
         (self.x, self.y)
+    }
+
+    /// Return offset at the top of window for the content to be centered vertically
+    pub fn get_top_offset(&self, content_height: usize) -> usize {
+        if content_height >= self.parent_h as usize {
+            0
+        } else {
+            ((self.parent_h as usize - content_height) / 2) as usize
+        }
     }
 
     pub fn down(&mut self) {
@@ -47,6 +58,11 @@ impl Window {
         if self.x != u16::MAX {
             self.x += 1;
         }
+    }
+
+    pub fn set_parent_dims(&mut self, w: u16, h: u16) {
+        self.parent_w = w;
+        self.parent_h = h;
     }
 }
 
