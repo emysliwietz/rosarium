@@ -26,6 +26,7 @@ use tui::symbols::line::{CROSS, THICK_CROSS};
 use tui::text::Text;
 use tui::widgets::Wrap;
 use rosarium::rosary::{get_daily_mystery, Rosary};
+use rosarium::rosary::Prayer::{FirstMystery, FourthMystery, SecondMystery, ThirdMystery};
 use rosarium::tui::{Window};
 
 #[derive(Copy, Clone, Debug)]
@@ -85,8 +86,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    // Handle tabs
-    let menu_titles = vec!["Rosarium", "Settings", "Quit"];
     let mut active_menu_item = MenuItem::Rosary;
 
     loop {
@@ -183,12 +182,15 @@ fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     let prayer_title = rosary_prayer.get_prayer_title();
     let top_offset = window.get_top_offset(prayer_text.height() + 3);
     let mut centered_prayer_text = Text::raw(String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset));
-    centered_prayer_text.patch_style(Style::default().remove_modifier(Modifier::ITALIC).add_modifier(Modifier::BOLD).fg(Color::LightYellow));
+    if rosary_prayer.is_mystery() {
+        centered_prayer_text.patch_style(Style::default().remove_modifier(Modifier::ITALIC).add_modifier(Modifier::BOLD).fg(rosary_prayer.to_color()));
+    } else {
+        centered_prayer_text.patch_style(Style::default().remove_modifier(Modifier::ITALIC).add_modifier(Modifier::BOLD).fg(Color::LightYellow));
+    }
     centered_prayer_text.extend(prayer_text);
     let rosarium = Paragraph::new(
         centered_prayer_text
     )
-        .style(Style::default().add_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .scroll(window.get_offset())
@@ -199,7 +201,11 @@ fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
                 .title("Rosarium")
                 .border_type(BorderType::Rounded),
         );
-    rosarium
+    if rosary_prayer.is_mystery() {
+        rosarium.style(Style::default().remove_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
+    } else {
+        rosarium.style(Style::default().add_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
+    }
 }
 
 fn render_progress<'a>(rosary: &Rosary) -> Paragraph<'a> {

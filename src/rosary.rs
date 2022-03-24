@@ -2,12 +2,14 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use chrono::{Datelike, Weekday};
+use tui::style::Color;
 use crate::config::{MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
 use crate::language::{ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, SecondMystery, SignOfCross, ThirdMystery};
 
 
+#[derive(Debug)]
 pub enum Mysteries {
     Joyful,
     Sorrowful,
@@ -15,7 +17,7 @@ pub enum Mysteries {
     Luminous
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Prayer {
     None,
     SignOfCross,
@@ -62,6 +64,20 @@ impl Prayer {
         }
     }
 
+    pub fn is_mystery(&self) -> bool {
+        self == &FirstMystery || self == &SecondMystery || self == &ThirdMystery || self == &FourthMystery || self == &FirstMystery
+    }
+
+    pub fn to_color(&self) -> Color {
+        match get_daily_mystery_enum() {
+            Luminous => Color::White,
+            Glorious => Color::LightMagenta,
+            Sorrowful => Color::Red,
+            Joyful => Color::Magenta,
+            _ => Color::White
+        }
+    }
+
     pub fn get_prayer_text(&self) -> String {
         let file = PRAYER_DIR.to_owned() + "/" + &self.get_file();
         fs::read_to_string(&file)
@@ -102,17 +118,17 @@ impl ToString for Mysteries {
             Joyful => "Gaudiosa",
             Sorrowful => "Dolorosa",
             Glorious => "Gloriosa",
-            Luminous => "Gaudiosa"
+            Luminous => "Luminosa"
         };
 
         format!("Mysteria {}", mystery_adj)
     }
 }
 
-pub fn get_daily_mystery() -> String {
+fn get_daily_mystery_enum() -> Mysteries {
     let current_time = chrono::offset::Local::now();
     let weekday = current_time.date().weekday();
-    let mystery = match weekday {
+    match weekday {
         Weekday::Mon => Joyful,
         Weekday::Tue => Sorrowful,
         Weekday::Wed => Glorious,
@@ -120,8 +136,11 @@ pub fn get_daily_mystery() -> String {
         Weekday::Fri => Sorrowful,
         Weekday::Sat => Joyful,
         Weekday::Sun => Glorious
-    };
-    mystery.to_string()
+    }
+}
+
+pub fn get_daily_mystery() -> String {
+    get_daily_mystery_enum().to_string()
     /*
     Sundays of Advent and Christmas  JOYFUL
 Sundays of Lent  SORROWFUL
