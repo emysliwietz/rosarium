@@ -5,7 +5,7 @@ use chrono::{Datelike, Weekday};
 use crate::config::{MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
 use crate::language::{ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
-use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, OurFather, SecondMystery, SignOfCross, ThirdMystery};
+use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, SecondMystery, SignOfCross, ThirdMystery};
 
 
 pub enum Mysteries {
@@ -33,6 +33,7 @@ pub enum Prayer {
     ThirdMystery,
     FourthMystery,
     FifthMystery,
+    Laudetur,
     FinalPrayer
 }
 
@@ -51,6 +52,7 @@ impl Prayer {
             FatimaOMyJesus => String::from("oratio_fatimae"),
             HailHolyQueen => String::from("salve_regina"),
             FinalPrayer => String::from("oratio_ad_finem_rosarii"),
+            Laudetur => String::from("laudetur_jesus_christus"),
             FirstMystery => get_daily_mystery_file("I"),
             SecondMystery => get_daily_mystery_file("II"),
             ThirdMystery => get_daily_mystery_file("III"),
@@ -83,6 +85,9 @@ impl Prayer {
                     ThirdMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(3), title),
                     FourthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(4), title),
                     FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title),
+                    HailMaryFaith => format!("{} {}", title, "pro fide"),
+                    HailMaryHope => format!("{} {}", title, "pro spe"),
+                    HailMaryCharity => format!("{} {}", title, "pro caritate"),
                     _ => title
                 }
             }
@@ -172,11 +177,11 @@ impl Rosary {
                         4 => FourthMystery,
                         5 => FifthMystery,
                         _ => Prayer::None
-                    }],
+                    }, OurFather],
                     i if i>=1 && i<=10 => vec![HailMary],
                     11 => vec![GloryBe, FatimaOMyJesus],
                     12 => if self.decade == 5 {
-                        vec![HailHolyQueen, FinalPrayer, SignOfCross]
+                        vec![HailHolyQueen, FinalPrayer, Laudetur, SignOfCross]
                     } else {vec![]}
                     _ => {vec![]}
                 }
@@ -278,11 +283,11 @@ impl Rosary {
         if self.decade == 0 && self.bead == 0 {
             location = String::from("ad crucifixum");
         } else if self.decade == 0 && self.bead == 1 {
-            location = format!("ad {} granum", ordinal_n_acc(self.bead));
+            location = format!("ad {} nodum", ordinal_n_acc(self.bead));
         } else if self.decade == 0 && self.bead == 5 {
             location = String::from("post tergeminum granum");
         } else if self.decade == 0 && self.bead == 6 {
-            location = format!("ad {} granum", ordinal_n_acc(self.bead - 1));
+            location = format!("ad {} nodum", ordinal_n_acc(self.bead - 1));
         } else if self.decade == 0 && self.bead > 1 && self.bead <= 4 {
             location = format!("ad {} granum tergemini grani", ordinal_n_acc(self.bead - 1));
         } else if self.bead == 0 {
@@ -292,9 +297,9 @@ impl Rosary {
         } else if self.bead == 12 {
             location = String::from("ad finem rosarii");
         } else {
-            location = format!("ad {} granum {} decennii", ordinal_n_acc(self.bead), ordinal_n_gen(self.decade))
+            location = format!("ad {} nodum {} decennii", ordinal_n_acc(self.bead), ordinal_n_gen(self.decade))
         }
-        format!("Oratio {}.", location)
+        format!("Manus {}.", location)
     }
 
     pub fn get_decade(&self) -> u8 {
