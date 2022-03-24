@@ -65,7 +65,7 @@ impl Prayer {
     }
 
     pub fn is_mystery(&self) -> bool {
-        self == &FirstMystery || self == &SecondMystery || self == &ThirdMystery || self == &FourthMystery || self == &FirstMystery
+        self == &FirstMystery || self == &SecondMystery || self == &ThirdMystery || self == &FourthMystery || self == &FifthMystery
     }
 
     pub fn to_color(&self) -> Color {

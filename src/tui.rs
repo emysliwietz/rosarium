@@ -48,6 +48,15 @@ impl Window {
         }
     }
 
+    /// Return offset at the top of window for the content to be centered vertically
+    pub fn get_vert_offset(&self, content_width: usize) -> usize {
+        if content_width >= self.parent_w as usize {
+            0
+        } else {
+            ((self.parent_w as usize - content_width) / 2) as usize
+        }
+    }
+
     pub fn down(&mut self) {
         if self.x != 0 {
             self.x -= 1;
@@ -57,6 +66,18 @@ impl Window {
     pub fn up(&mut self) {
         if self.x != u16::MAX {
             self.x += 1;
+        }
+    }
+
+    pub fn left(&mut self) {
+        if self.y != 0 {
+            self.y -= 1;
+        }
+    }
+
+    pub fn right(&mut self) {
+        if self.y != u16::MAX {
+            self.y += 1;
         }
     }
 

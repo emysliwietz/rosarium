@@ -143,6 +143,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Char('h') => recede(&mut rosary),
                 KeyCode::Char('j') => scroll_down(&mut window, &rosary),
                 KeyCode::Char('k') => scroll_up(&mut window, &rosary),
+                KeyCode::Char('H') => scroll_left(&mut window, &rosary),
+                KeyCode::Char('L') => scroll_right(&mut window, &rosary),
                 KeyCode::Right => advance(&mut rosary),
                 KeyCode::Backspace => recede(&mut rosary),
                 KeyCode::Left => recede(&mut rosary),
@@ -176,22 +178,33 @@ fn scroll_up(window: &mut Window, rosary: &Rosary) {
     render_prayer(rosary, window);
 }
 
+fn scroll_left(window: &mut Window, rosary: &Rosary) {
+    window.left();
+    render_prayer(rosary, window);
+}
+
+fn scroll_right(window: &mut Window, rosary: &Rosary) {
+    window.right();
+    render_prayer(rosary, window);
+}
+
 fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     let rosary_prayer = rosary.to_prayer();
     let prayer_text = Text::from(rosary_prayer.get_prayer_text());
     let prayer_title = rosary_prayer.get_prayer_title();
     let top_offset = window.get_top_offset(prayer_text.height() + 3);
     let mut centered_prayer_text = Text::raw(String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset));
+    let prayer_width = centered_prayer_text.width();
     if rosary_prayer.is_mystery() {
         centered_prayer_text.patch_style(Style::default().remove_modifier(Modifier::ITALIC).add_modifier(Modifier::BOLD).fg(rosary_prayer.to_color()));
     } else {
         centered_prayer_text.patch_style(Style::default().remove_modifier(Modifier::ITALIC).add_modifier(Modifier::BOLD).fg(Color::LightYellow));
     }
     centered_prayer_text.extend(prayer_text);
+
     let rosarium = Paragraph::new(
         centered_prayer_text
     )
-        .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .scroll(window.get_offset())
         .block(
@@ -202,9 +215,15 @@ fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
                 .border_type(BorderType::Rounded),
         );
     if rosary_prayer.is_mystery() {
-        rosarium.style(Style::default().remove_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
+        let mut offset = window.get_offset();
+        offset.0 = window.get_vert_offset(prayer_width) as u16;
+        rosarium
+            .style(Style::default().remove_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
+            .alignment(Alignment::Left)
     } else {
-        rosarium.style(Style::default().add_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
+        rosarium
+            .style(Style::default().add_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
+            .alignment(Alignment::Center)
     }
 }
 
