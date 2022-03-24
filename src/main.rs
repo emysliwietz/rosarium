@@ -25,7 +25,7 @@ use tui::layout::Constraint::Percentage;
 use tui::symbols::line::{CROSS, THICK_CROSS};
 use tui::text::Text;
 use tui::widgets::Wrap;
-use rosarium::rosary::{get_daily_mystery, Rosary, ROSARY_BEAD, ROSARY_CROSS};
+use rosarium::rosary::{get_daily_mystery, Rosary};
 use rosarium::tui::{Window};
 
 #[derive(Copy, Clone, Debug)]
@@ -179,14 +179,17 @@ fn scroll_up(window: &mut Window, rosary: &Rosary) {
 
 fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     //todo!("Add title of prayer in bold");
-    let prayer_text = Text::from(rosary.to_prayer().get_prayer_text());
-    let top_offset = window.get_top_offset(prayer_text.height());
-    let mut centered_prayer_text = Text::raw("\n".repeat(top_offset));
+    let rosary_prayer = rosary.to_prayer();
+    let prayer_text = Text::from(rosary_prayer.get_prayer_text());
+    let prayer_title = rosary_prayer.get_prayer_title();
+    let top_offset = window.get_top_offset(prayer_text.height() + 3);
+    let mut centered_prayer_text = Text::raw(String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset));
+    centered_prayer_text.patch_style(Style::default().remove_modifier(Modifier::ITALIC).add_modifier(Modifier::BOLD).fg(Color::LightYellow));
     centered_prayer_text.extend(prayer_text);
     let rosarium = Paragraph::new(
         centered_prayer_text
     )
-        .style(Style::default().add_modifier(Modifier::ITALIC))
+        .style(Style::default().add_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .scroll(window.get_offset())

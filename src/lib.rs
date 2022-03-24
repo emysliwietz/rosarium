@@ -3,6 +3,7 @@ extern crate core;
 pub mod tui;
 pub mod rosary;
 pub mod language;
+pub mod config;
 
 #[cfg(test)]
 mod tests {

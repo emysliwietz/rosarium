@@ -1,12 +1,12 @@
 use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use chrono::{Datelike, Weekday};
+use crate::config::{PRAYER_DIR, TITLE_FILE};
 use crate::language::{ordinal_n_acc, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, OurFather, SecondMystery, SignOfCross, ThirdMystery};
 
-pub const ROSARY_CROSS: &str = "🕇✝♱✟🕆✞";
-pub const ROSARY_BEAD: &str = "•";
-pub const PRAYER_DIR: &str = "./preces/latina";
 
 pub enum Mysteries {
     Joyful,
@@ -59,6 +59,22 @@ impl Prayer {
         let file = PRAYER_DIR.to_owned() + "/" + self.get_file();
         fs::read_to_string(&file)
             .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file))
+    }
+
+    pub fn get_prayer_title(&self) -> String {
+        let filename = PRAYER_DIR.to_owned() + "/" + TITLE_FILE;
+        // Open the file in read-only mode (ignoring errors).
+        let file = File::open(filename).expect("Unable to open title file");
+        let reader = BufReader::new(file);
+
+        // Read the file line by line using the lines() iterator from std::io::BufRead.
+        for (index, line) in reader.lines().enumerate() {
+            let line = line.expect("Error fetching line"); // Ignore errors.
+            if line.starts_with(&(String::from(self.get_file()) + ":")) {
+                return String::from(line.split(":").nth(1).unwrap_or("no title found"))
+            }
+        }
+        format!("No title found for prayer {}", self.get_file())
     }
 }
 
