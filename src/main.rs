@@ -178,7 +178,6 @@ fn scroll_up(window: &mut Window, rosary: &Rosary) {
 }
 
 fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
-    //todo!("Add title of prayer in bold");
     let rosary_prayer = rosary.to_prayer();
     let prayer_text = Text::from(rosary_prayer.get_prayer_text());
     let prayer_title = rosary_prayer.get_prayer_title();
