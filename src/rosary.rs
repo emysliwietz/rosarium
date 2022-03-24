@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use chrono::{Datelike, Weekday};
 use crate::config::{MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
-use crate::language::{ordinal_n_acc, ordinal_n_gen};
+use crate::language::{ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, OurFather, SecondMystery, SignOfCross, ThirdMystery};
 
@@ -76,7 +76,15 @@ impl Prayer {
         for (index, line) in reader.lines().enumerate() {
             let line = line.expect("Error fetching line"); // Ignore errors.
             if line.starts_with(&(String::from(self.get_file()) + ":")) {
-                return String::from(line.split(":").nth(1).unwrap_or("no title found"))
+                let title = String::from(line.split(":").nth(1).unwrap_or("no title found"));
+                return match self {
+                    FirstMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(1), title),
+                    SecondMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(2), title),
+                    ThirdMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(3), title),
+                    FourthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(4), title),
+                    FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title),
+                    _ => title
+                }
             }
         }
         format!("No title found for prayer {}", self.get_file())

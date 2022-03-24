@@ -20,6 +20,11 @@ pub fn ordinal_n_acc(i: u8) -> &'static str {
     }
 }
 
+pub fn ordinal_n_acc_upper(i: u8) -> String {
+    let ordinal = String::from(ordinal_n_acc(i));
+    ordinal[..1].to_uppercase() + &ordinal[1..]
+}
+
 /// Ordinals for Latin neuter genitive singular
 pub fn ordinal_n_gen(i: u8) -> &'static str {
     match i {
