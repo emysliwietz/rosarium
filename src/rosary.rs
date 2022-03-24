@@ -113,7 +113,7 @@ impl Prayer {
                     FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title.trim()),
                     HailMaryFaith => format!("{} {}", title, "pro fide"),
                     HailMaryHope => format!("{} {}", title, "pro spe"),
-                    HaiWhlMaryCharity => format!("{} {}", title, "pro caritate"),
+                    HailMaryCharity => format!("{} {}", title, "pro caritate"),
                     _ => title
                 };
             }
