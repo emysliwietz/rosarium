@@ -22,7 +22,31 @@ use tui::{
     Terminal,
 };
 
-
-pub fn event_loop() {
-
+pub struct Window {
+    x: u16,
+    y: u16,
+    lang: &'static str
 }
+
+impl Window {
+    pub fn new() -> Window {
+        Window {x: 0, y: 0, lang: "latina"}
+    }
+
+    pub fn get_offset(&self) -> (u16, u16) {
+        (self.x, self.y)
+    }
+
+    pub fn down(&mut self) {
+        if self.x != 0 {
+            self.x -= 1;
+        }
+    }
+
+    pub fn up(&mut self) {
+        if self.x != u16::MAX {
+            self.x += 1;
+        }
+    }
+}
+

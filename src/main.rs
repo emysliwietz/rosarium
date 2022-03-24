@@ -26,7 +26,7 @@ use tui::symbols::line::{CROSS, THICK_CROSS};
 use tui::text::Text;
 use tui::widgets::Wrap;
 use rosarium::rosary::{get_daily_mystery, Rosary, ROSARY_BEAD, ROSARY_CROSS};
-use rosarium::tui::event_loop;
+use rosarium::tui::{Window};
 
 #[derive(Copy, Clone, Debug)]
 enum MenuItem {
@@ -53,6 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode().expect("can run in raw mode");
 
     let mut rosary = Rosary::new();
+    let mut window = Window::new();
 
     // Event loop
     let (tx, rx) = mpsc::channel();
@@ -114,7 +115,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // render current tab
             match active_menu_item {
-                MenuItem::Rosary => rect.render_widget(render_prayer(&rosary), chunks[0]),
+                MenuItem::Rosary => rect.render_widget(render_prayer(&rosary, &window), chunks[0]),
                 MenuItem::Settings => {
                     let pets_chunks = Layout::default()
                         .direction(Direction::Horizontal)
@@ -137,6 +138,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Char('r') => active_menu_item = MenuItem::Rosary,
                 KeyCode::Char('s') => active_menu_item = MenuItem::Settings,
                 KeyCode::Char(' ') => advance(&mut rosary),
+                KeyCode::Char('l') => advance(&mut rosary),
+                KeyCode::Char('h') => recede(&mut rosary),
+                KeyCode::Char('j') => scroll_down(&mut window, &rosary),
+                KeyCode::Char('k') => scroll_up(&mut window, &rosary),
                 KeyCode::Right => advance(&mut rosary),
                 KeyCode::Backspace => recede(&mut rosary),
                 KeyCode::Left => recede(&mut rosary),
@@ -160,7 +165,17 @@ fn recede(rosary: &mut Rosary) {
     render_progress(&rosary);
 }
 
-fn render_prayer<'a>(rosary: &Rosary) -> Paragraph<'a> {
+fn scroll_down(window: &mut Window, rosary: &Rosary) {
+    window.down();
+    render_prayer(rosary, window);
+}
+
+fn scroll_up(window: &mut Window, rosary: &Rosary) {
+    window.up();
+    render_prayer(rosary, window);
+}
+
+fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     //todo!("Add title of prayer in bold");
     let rosarium = Paragraph::new(
         Text::from(String::from("\n") + &rosary.to_prayer().get_prayer_text())
@@ -168,6 +183,7 @@ fn render_prayer<'a>(rosary: &Rosary) -> Paragraph<'a> {
         .style(Style::default().add_modifier(Modifier::ITALIC))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
+        .scroll(window.get_offset())
         .block(
             Block::default()
                 .borders(Borders::ALL)
