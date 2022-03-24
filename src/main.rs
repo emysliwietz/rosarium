@@ -164,12 +164,13 @@ fn render_prayer<'a>(rosary: &Rosary) -> Paragraph<'a> {
     let rosarium = Paragraph::new(
         Text::from(String::from("\n") + &rosary.to_prayer().get_prayer_text())
     )
+        .style(Style::default().add_modifier(Modifier::ITALIC))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
+                .style(Style::default().fg(Color::White).remove_modifier(Modifier::ITALIC))
                 .title("Rosarium")
                 .border_type(BorderType::Rounded),
         );
