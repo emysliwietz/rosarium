@@ -23,6 +23,8 @@ use tui::{
 };
 use tui::layout::Constraint::Percentage;
 use tui::symbols::line::{CROSS, THICK_CROSS};
+use tui::text::Text;
+use tui::widgets::Wrap;
 use rosarium::rosary::{get_daily_mystery, Rosary, ROSARY_BEAD, ROSARY_CROSS};
 use rosarium::tui::event_loop;
 
@@ -159,11 +161,11 @@ fn recede(rosary: &mut Rosary) {
 }
 
 fn render_prayer<'a>(rosary: &Rosary) -> Paragraph<'a> {
-    let rosarium = Paragraph::new(vec![
-        Spans::from(vec![Span::raw("")]),
-        Spans::from(vec![Span::raw(format!("{:?}", rosary.to_prayer()))]),
-    ])
+    let rosarium = Paragraph::new(
+        Text::from(String::from("\n") + &rosary.to_prayer().get_prayer_text())
+    )
         .alignment(Alignment::Center)
+        .wrap(Wrap { trim: true })
         .block(
             Block::default()
                 .borders(Borders::ALL)

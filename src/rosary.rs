@@ -6,7 +6,7 @@ use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPr
 
 pub const ROSARY_CROSS: &str = "🕇✝♱✟🕆✞";
 pub const ROSARY_BEAD: &str = "•";
-pub const PRAYER_DIR: &str = "preces/latine";
+pub const PRAYER_DIR: &str = "./preces/latina";
 
 pub enum Mysteries {
     Joyful,
@@ -56,8 +56,9 @@ impl Prayer {
     }
 
     pub fn get_prayer_text(&self) -> String {
-        fs::read_to_string(PRAYER_DIR.to_owned() + "/" + self.get_file())
-            .expect("Unable to read file.")
+        let file = PRAYER_DIR.to_owned() + "/" + self.get_file();
+        fs::read_to_string(&file)
+            .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file))
     }
 }
 
