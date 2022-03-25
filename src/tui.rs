@@ -1,17 +1,20 @@
+use std::error::Error;
 use chrono::prelude::*;
 use crossterm::{
-    event::{self, Event as CEvent, KeyCode},
+    event::{self as CEvent, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 use rand::{distributions::Alphanumeric, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
+use std::io::Stdout;
 use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
+use crossterm::event::KeyEvent;
 use thiserror::Error;
-use crate::language::{Language};
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -22,7 +25,39 @@ use tui::{
     },
     Terminal,
 };
+use tui::layout::Constraint::Percentage;
+use tui::symbols::line::{CROSS, THICK_CROSS};
+use tui::text::Text;
+use tui::widgets::Wrap;
+use crate::language::{get_title_translation, Language};
+use crate::rosary::{get_daily_mystery, Rosary};
+use crate::rosary::Prayer::{FirstMystery, FourthMystery, SecondMystery, ThirdMystery};
+
 use crate::language::Language::LATINA;
+use crate::render::{redraw, render_prayer, render_progress};
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum MenuItem {
+    Rosary,
+    Settings,
+    Quit,
+}
+
+impl From<MenuItem> for usize {
+    fn from(input: MenuItem) -> usize {
+        match input {
+            MenuItem::Quit => 0,
+            MenuItem::Rosary => 1,
+            MenuItem::Settings => 2
+        }
+    }
+}
+
+pub enum Event<I> {
+    Input(I),
+    Refresh(u16, u16),
+    Tick,
+}
 
 #[derive(Debug)]
 pub struct Window {
@@ -121,6 +156,88 @@ impl Window {
             LATINA => {self.lang = Language::ANGLIA; }
         }
     }
+}
+
+pub fn input_handler<'a>(rx: &Receiver<Event<KeyEvent>>, terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+                         rosary: &'a mut Rosary,
+                         current_menu_item: &'a MenuItem,
+                         window: &'a mut Window) -> Result<&'a MenuItem, Box<dyn Error>> {
+    // Input handler
+    match rx.recv()? {
+        Event::Refresh(_, _) => {
+            redraw(terminal, &rosary, window)?
+        },
+        Event::Input(event) => {
+            match event.code {
+                KeyCode::Char('q') => {
+                    disable_raw_mode()?;
+                    terminal.show_cursor()?;
+                    return Ok(&MenuItem::Quit);
+                }
+                KeyCode::Char('r') => return Ok(&MenuItem::Rosary),
+                KeyCode::Char('s') => return Ok(&MenuItem::Settings),
+                KeyCode::Char(' ') => advance(rosary, window),
+                KeyCode::Char('l') => advance(rosary, window),
+                KeyCode::Char('h') => recede(rosary, window),
+                KeyCode::Char('k') => scroll_down(window, &rosary),
+                KeyCode::Char('j') => scroll_up(window, &rosary),
+                KeyCode::Char('x') => window.cycle_language(),
+                KeyCode::Char('H') => scroll_left(window, &rosary),
+                KeyCode::Char('L') => scroll_right(window, &rosary),
+                KeyCode::Right => advance(rosary, window, ),
+                KeyCode::Backspace => recede(rosary, window),
+                KeyCode::Left => recede(rosary, window),
+                KeyCode::Up => {}
+                _ => {}
+            }
+            redraw(terminal, &rosary, window)?;
+        },
+        Event::Tick => {}
+    };
+    return Ok(current_menu_item);
+}
+
+pub fn key_listen<'a>(rx: &'a Receiver<Event<KeyEvent>>, terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+                      rosary: &'a mut Rosary, window: &'a mut Window, active_menu_item: &'a mut MenuItem)
+                      -> MenuItem {
+    let new_menu_item = input_handler(&rx, terminal,
+                                      rosary, &active_menu_item, window);
+    if new_menu_item.is_err() {
+        window.set_error("Unable to read key.".to_owned());
+        return active_menu_item.clone();
+    }
+    let mut new_menu_item = new_menu_item.unwrap();
+    return *new_menu_item;
+}
+
+fn advance(rosary: &mut Rosary, window: &mut Window) {
+    rosary.advance();
+    render_progress(&rosary, window);
+}
+
+fn recede(rosary: &mut Rosary, window: &mut Window) {
+    rosary.recede();
+    render_progress(&rosary, window);
+}
+
+fn scroll_down(window: &mut Window, rosary: &Rosary) {
+    window.down();
+    render_prayer(rosary, window);
+}
+
+fn scroll_up(window: &mut Window, rosary: &Rosary) {
+    window.up();
+    render_prayer(rosary, window);
+}
+
+fn scroll_left(window: &mut Window, rosary: &Rosary) {
+    window.left();
+    render_prayer(rosary, window);
+}
+
+fn scroll_right(window: &mut Window, rosary: &Rosary) {
+    window.right();
+    render_prayer(rosary, window);
 }
 
 pub fn center(text: &String, window: &Window) -> String {
