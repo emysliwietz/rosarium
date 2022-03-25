@@ -8,7 +8,7 @@ use tui::style::Color;
 use crate::config::{INITIUM_FILE, MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
 use crate::language::{get_title_translation, ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
-use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, SecondMystery, SignOfCross, ThirdMystery};
+use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, PrayerForPriests, PrayerToStJoseph, PrayerToStMichael, SecondMystery, SignOfCross, ThirdMystery};
 use crate::tui::Window;
 
 #[derive(Debug)]
@@ -32,6 +32,9 @@ pub enum Prayer {
     GloryBe,
     FatimaOMyJesus,
     HailHolyQueen,
+    PrayerToStMichael,
+    PrayerToStJoseph,
+    PrayerForPriests,
     FirstMystery,
     SecondMystery,
     ThirdMystery,
@@ -55,6 +58,9 @@ impl Prayer {
             GloryBe => String::from("gloria_patri"),
             FatimaOMyJesus => String::from("oratio_fatimae"),
             HailHolyQueen => String::from("salve_regina"),
+            PrayerToStMichael => String::from("oratio_ad_sanctum_michael"),
+            PrayerForPriests => String::from("oratio_pro_sacerdotibus"),
+            PrayerToStJoseph => String::from("oratio_ad_sanctum_iosephum"),
             FinalPrayer => String::from("oratio_ad_finem_rosarii"),
             Laudetur => String::from("laudetur_jesus_christus"),
             FirstMystery => get_daily_mystery_file("I"),
@@ -226,7 +232,7 @@ impl Rosary {
                     i if i >= 1 && i <= 10 => vec![HailMary],
                     11 => vec![GloryBe, FatimaOMyJesus],
                     12 => if self.decade == 5 {
-                        vec![HailHolyQueen, FinalPrayer, Laudetur, SignOfCross]
+                        vec![HailHolyQueen, PrayerToStJoseph, PrayerToStMichael, FinalPrayer, Laudetur, SignOfCross]
                     } else { vec![] }
                     _ => { vec![] }
                 }
