@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 use chrono::{Datelike, Weekday};
 use tui::style::Color;
 
-use crate::config::{MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
+use crate::config::{INITIUM_FILE, MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
 use crate::language::{get_title_translation, ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, SecondMystery, SignOfCross, ThirdMystery};
@@ -91,6 +91,12 @@ impl Prayer {
                 mystery_additions.advance_by((rosary.decade - 1) as usize);
                 return text.replace("Jesus.", &format!("Jesus,\n{}.", mystery_additions.next().unwrap_or("")));
             }
+        } else if self == &HailMaryFaith {
+            return initial_hail_mary_addition(0, window, text);
+        } else if self == &HailMaryHope {
+            return initial_hail_mary_addition(1, window, text);
+        } else if self == &HailMaryCharity {
+            return initial_hail_mary_addition(2, window, text);
         }
         text
     }
@@ -109,6 +115,17 @@ impl Prayer {
             _ => title
         };
     }
+}
+
+fn initial_hail_mary_addition(n: usize, window: &Window, text: String) -> String {
+    let mystery_addition = fs::read_to_string(PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + MYSTERY_DIR + "/" + INITIUM_FILE);
+    if mystery_addition.is_ok() {
+        let mystery_addition = mystery_addition.unwrap();
+        let mut mystery_additions = mystery_addition.split("\n");
+        mystery_additions.advance_by(n);
+        return text.replace("Jesus.", &format!("Jesus,\n{}.", mystery_additions.next().unwrap_or("")));
+    }
+    return text;
 }
 
 impl ToString for Mysteries {
