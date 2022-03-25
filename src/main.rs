@@ -25,6 +25,7 @@ use tui::layout::Constraint::Percentage;
 use tui::symbols::line::{CROSS, THICK_CROSS};
 use tui::text::Text;
 use tui::widgets::Wrap;
+use rosarium::language::get_title_translation;
 use rosarium::rosary::{get_daily_mystery, Rosary};
 use rosarium::rosary::Prayer::{FirstMystery, FourthMystery, SecondMystery, ThirdMystery};
 use rosarium::tui::{center, Window};
@@ -109,14 +110,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref(),)
                 .split(chunks[1]);
 
-            rect.render_widget(render_progress(&rosary), bottom_bar[0]);
+            rect.render_widget(render_progress(&rosary, &mut window), bottom_bar[0]);
             rect.render_widget(render_mysteries(), bottom_bar[1]);
 
             window.set_parent_dims(chunks[0].width, chunks[0].height);
 
             // render current tab
             match active_menu_item {
-                MenuItem::Rosary => rect.render_widget(render_prayer(&rosary, &window), chunks[0]),
+                MenuItem::Rosary => rect.render_widget(render_prayer(&rosary, &mut window), chunks[0]),
                 MenuItem::Settings => {
                     let pets_chunks = Layout::default()
                         .direction(Direction::Horizontal)
@@ -138,16 +139,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 KeyCode::Char('r') => active_menu_item = MenuItem::Rosary,
                 KeyCode::Char('s') => active_menu_item = MenuItem::Settings,
-                KeyCode::Char(' ') => advance(&mut rosary),
-                KeyCode::Char('l') => advance(&mut rosary),
-                KeyCode::Char('h') => recede(&mut rosary),
+                KeyCode::Char(' ') => advance(&mut rosary, &mut window),
+                KeyCode::Char('l') => advance(&mut rosary, &mut window),
+                KeyCode::Char('h') => recede(&mut rosary, &mut window),
                 KeyCode::Char('k') => scroll_down(&mut window, &rosary),
                 KeyCode::Char('j') => scroll_up(&mut window, &rosary),
+                KeyCode::Char('x') => window.cycle_language(),
                 KeyCode::Char('H') => scroll_left(&mut window, &rosary),
                 KeyCode::Char('L') => scroll_right(&mut window, &rosary),
-                KeyCode::Right => advance(&mut rosary),
-                KeyCode::Backspace => recede(&mut rosary),
-                KeyCode::Left => recede(&mut rosary),
+                KeyCode::Right => advance(&mut rosary, &mut window),
+                KeyCode::Backspace => recede(&mut rosary, &mut window),
+                KeyCode::Left => recede(&mut rosary, &mut window),
                 KeyCode::Up => {}
                 _ => {}
             },
@@ -158,14 +160,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn advance(rosary: &mut Rosary) {
+fn advance(rosary: &mut Rosary, window: &mut Window) {
     rosary.advance();
-    render_progress(&rosary);
+    render_progress(&rosary, window);
 }
 
-fn recede(rosary: &mut Rosary) {
+fn recede(rosary: &mut Rosary, window: &mut Window) {
     rosary.recede();
-    render_progress(&rosary);
+    render_progress(&rosary, window);
 }
 
 fn scroll_down(window: &mut Window, rosary: &Rosary) {
@@ -188,10 +190,10 @@ fn scroll_right(window: &mut Window, rosary: &Rosary) {
     render_prayer(rosary, window);
 }
 
-fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
+fn render_prayer<'a>(rosary: &Rosary, window: &mut Window) -> Paragraph<'a> {
     let rosary_prayer = rosary.to_prayer();
-    let mut prayer_words = rosary_prayer.get_prayer_text(rosary);
-    let mut prayer_title = rosary_prayer.get_prayer_title();
+    let mut prayer_words = rosary_prayer.get_prayer_text(rosary, window);
+    let mut prayer_title = rosary_prayer.get_prayer_title(window);
     if rosary_prayer.is_mystery() {
         prayer_title = center(&prayer_title, window);
         prayer_words = center(&prayer_words, &window);
@@ -216,7 +218,7 @@ fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White).remove_modifier(Modifier::ITALIC))
-                .title("Rosarium")
+                .title(get_title_translation("rosarium", window))
                 .border_type(BorderType::Rounded),
         );
     if rosary_prayer.is_mystery() {
@@ -232,8 +234,14 @@ fn render_prayer<'a>(rosary: &Rosary, window: &Window) -> Paragraph<'a> {
     }
 }
 
-fn render_progress<'a>(rosary: &Rosary) -> Paragraph<'a> {
-    let progress = Paragraph::new(rosary.progress())
+fn render_progress<'a>(rosary: &Rosary, window: &mut Window) -> Paragraph<'a> {
+    let mut progress = Paragraph::new(
+        if window.has_error() {
+            window.error()
+        } else {
+            rosary.progress()
+        }
+    )
         .alignment(Alignment::Right)
         .block(
             Block::default()
@@ -242,6 +250,10 @@ fn render_progress<'a>(rosary: &Rosary) -> Paragraph<'a> {
                 .title("Oratio")
                 .border_type(BorderType::Rounded)
         );
+    if window.has_error() {
+        progress = progress.style(Style::default().fg(Color::Red));
+        window.clear_error();
+    }
     progress
 }
 

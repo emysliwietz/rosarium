@@ -2,6 +2,24 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use crate::config::{PRAYER_DIR, TITLE_FILE};
+use crate::tui::Window;
+
+#[derive(Debug)]
+pub enum Language {
+    ANGLIA,
+    GERMANA,
+    LATINA,
+}
+
+impl ToString for Language {
+    fn to_string(&self) -> String {
+        match self {
+            Language::ANGLIA => "anglia",
+            Language::GERMANA => "germana",
+            Language::LATINA => "latina",
+        }.to_owned()
+    }
+}
 
 /// Ordinals for Latin neuter accusative singular
 pub fn ordinal_n_acc(i: u8) -> &'static str {
@@ -40,4 +58,25 @@ pub fn ordinal_n_gen(i: u8) -> &'static str {
         10 => "decimi",
         _ => ""
     }
+}
+
+pub fn get_title_translation(lookup: &str, window: &mut Window) -> String {
+    let filename = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + TITLE_FILE;
+    // Open the file in read-only mode (ignoring errors).
+    let file = File::open(&filename);
+    if file.is_err() {
+        window.set_error(format!("Unable to open title file: {}", &filename));
+        return String::from("");
+    }
+    let file = file.unwrap();
+    let reader = BufReader::new(file);
+
+    // Read the file line by line using the lines() iterator from std::io::BufRead.
+    for (index, line) in reader.lines().enumerate() {
+        let line = line.expect("Error fetching line"); // Ignore errors.
+        if line.starts_with(&(String::from(lookup) + ":")) {
+            return String::from(line.split(":").nth(1).unwrap_or("no title found").trim());
+        }
+    }
+    return format!("No title found for prayer {}", lookup)
 }

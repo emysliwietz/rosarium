@@ -11,6 +11,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 use thiserror::Error;
+use crate::language::{Language};
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -21,18 +22,21 @@ use tui::{
     },
     Terminal,
 };
+use crate::language::Language::LATINA;
 
+#[derive(Debug)]
 pub struct Window {
     x: u16,
     y: u16,
-    lang: &'static str,
+    lang: Language,
     parent_h: u16,
-    parent_w: u16
+    parent_w: u16,
+    last_error: String,
 }
 
 impl Window {
     pub fn new() -> Window {
-        Window {x: 0, y: 0, lang: "latina", parent_h: 0, parent_w: 0}
+        Window {x: 0, y: 0, lang: LATINA, parent_h: 0, parent_w: 0, last_error: String::from("")}
     }
 
     pub fn get_offset(&self) -> (u16, u16) {
@@ -88,6 +92,34 @@ impl Window {
 
     pub fn get_y(&self) -> u16 {
         self.y
+    }
+
+    pub fn language(&self) -> String {
+        self.lang.to_string()
+    }
+
+    pub fn has_error(&self) -> bool {
+        self.last_error != String::from("")
+    }
+
+    pub fn error(&self) -> String {
+        self.last_error.clone()
+    }
+
+    pub fn clear_error(&mut self) {
+        self.last_error = String::from("");
+    }
+
+    pub fn set_error(&mut self, error: String) {
+        self.last_error = error;
+    }
+
+    pub fn cycle_language(&mut self) {
+        match self.lang {
+            Language::ANGLIA => { self.lang = Language::GERMANA; }
+            Language::GERMANA => { self.lang = Language::LATINA; }
+            LATINA => {self.lang = Language::ANGLIA; }
+        }
     }
 }
 

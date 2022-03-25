@@ -6,9 +6,10 @@ use chrono::{Datelike, Weekday};
 use tui::style::Color;
 
 use crate::config::{MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
-use crate::language::{ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
+use crate::language::{get_title_translation, ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, SecondMystery, SignOfCross, ThirdMystery};
+use crate::tui::Window;
 
 #[derive(Debug)]
 pub enum Mysteries {
@@ -78,12 +79,12 @@ impl Prayer {
         }
     }
 
-    pub fn get_prayer_text(&self, rosary: &Rosary) -> String {
-        let file = PRAYER_DIR.to_owned() + "/" + &self.get_file();
+    pub fn get_prayer_text(&self, rosary: &Rosary, window: &Window) -> String {
+        let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
         let text = fs::read_to_string(&file)
             .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file));
         if self == &HailMary {
-            let mystery_addition = fs::read_to_string(PRAYER_DIR.to_owned() + "/" + &get_mysteries_file());
+            let mystery_addition = fs::read_to_string(PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &get_mysteries_file());
             if mystery_addition.is_ok() {
                 let mystery_addition = mystery_addition.unwrap();
                 let mut mystery_additions = mystery_addition.split("\n");
@@ -94,31 +95,19 @@ impl Prayer {
         text
     }
 
-    pub fn get_prayer_title(&self) -> String {
-        let filename = PRAYER_DIR.to_owned() + "/" + TITLE_FILE;
-        // Open the file in read-only mode (ignoring errors).
-        let file = File::open(filename).expect("Unable to open title file");
-        let reader = BufReader::new(file);
-
-        // Read the file line by line using the lines() iterator from std::io::BufRead.
-        for (index, line) in reader.lines().enumerate() {
-            let line = line.expect("Error fetching line"); // Ignore errors.
-            if line.starts_with(&(String::from(self.get_file()) + ":")) {
-                let title = String::from(line.split(":").nth(1).unwrap_or("no title found"));
-                return match self {
-                    FirstMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(1), title.trim()),
-                    SecondMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(2), title.trim()),
-                    ThirdMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(3), title.trim()),
-                    FourthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(4), title.trim()),
-                    FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title.trim()),
-                    HailMaryFaith => format!("{} {}", title, "pro fide"),
-                    HailMaryHope => format!("{} {}", title, "pro spe"),
-                    HailMaryCharity => format!("{} {}", title, "pro caritate"),
-                    _ => title
-                };
-            }
-        }
-        format!("No title found for prayer {}", self.get_file())
+    pub fn get_prayer_title(&self, window: &mut Window) -> String {
+        let title = get_title_translation(&self.get_file(), window);
+        return match self {
+            FirstMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(1), title.trim()),
+            SecondMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(2), title.trim()),
+            ThirdMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(3), title.trim()),
+            FourthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(4), title.trim()),
+            FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title.trim()),
+            HailMaryFaith => format!("{} {}", title, "pro fide"),
+            HailMaryHope => format!("{} {}", title, "pro spe"),
+            HailMaryCharity => format!("{} {}", title, "pro caritate"),
+            _ => title
+        };
     }
 }
 
