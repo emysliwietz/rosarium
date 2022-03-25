@@ -91,6 +91,11 @@ pub fn render_mysteries<'a>() -> Paragraph<'a> {
     progress
 }
 
+pub fn refresh(terminal: &mut Terminal<CrosstermBackend<Stdout>>, rosary: &Rosary, window: &mut Window) {
+    terminal.clear();
+    redraw(terminal, rosary, window);
+}
+
 pub fn redraw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, rosary: &Rosary, window: &mut Window)
 -> Result<(), Box<dyn Error>> {
     let chunks = Layout::default()

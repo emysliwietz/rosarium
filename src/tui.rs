@@ -34,7 +34,7 @@ use crate::rosary::{get_daily_mystery, Rosary};
 use crate::rosary::Prayer::{FirstMystery, FourthMystery, SecondMystery, ThirdMystery};
 
 use crate::language::Language::LATINA;
-use crate::render::{redraw, render_prayer, render_progress};
+use crate::render::{redraw, refresh, render_prayer, render_progress};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MenuItem {
@@ -174,7 +174,7 @@ pub fn input_handler<'a>(rx: &Receiver<Event<KeyEvent>>, terminal: &'a mut Termi
                     terminal.show_cursor()?;
                     return Ok(&MenuItem::Quit);
                 }
-                KeyCode::Char('r') => return Ok(&MenuItem::Rosary),
+                KeyCode::Char('r') => refresh(terminal, &rosary, window),
                 KeyCode::Char('s') => return Ok(&MenuItem::Settings),
                 KeyCode::Char(' ') => advance(rosary, window),
                 KeyCode::Char('l') => advance(rosary, window),
