@@ -8,11 +8,11 @@ use tui::text::Text;
 use tui::widgets::{Block, Borders, BorderType, Paragraph, Wrap};
 use crate::language::get_title_translation;
 use crate::rosary::{get_daily_mystery, Rosary};
-use crate::tui::{center, MenuItem, Window};
+use crate::tui::{center, Window};
 
-pub fn render_prayer<'a>(rosary: &Rosary, window: &mut Window) -> Paragraph<'a> {
+pub fn render_prayer<'a>(rosary: &Rosary, window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
     let rosary_prayer = rosary.to_prayer();
-    let mut prayer_words = rosary_prayer.get_prayer_text(rosary, window);
+    let mut prayer_words = rosary_prayer.get_prayer_text(rosary, window)?;
     let mut prayer_title = rosary_prayer.get_prayer_title(window);
     if rosary_prayer.is_mystery() {
         prayer_title = center(&prayer_title, window);
@@ -41,7 +41,7 @@ pub fn render_prayer<'a>(rosary: &Rosary, window: &mut Window) -> Paragraph<'a> 
                 .title(get_title_translation("rosarium", window))
                 .border_type(BorderType::Rounded),
         );
-    if rosary_prayer.is_mystery() {
+    Ok(if rosary_prayer.is_mystery() {
         let mut offset = window.get_offset();
         offset.0 = window.get_vert_offset(prayer_width) as u16;
         rosarium
@@ -51,7 +51,7 @@ pub fn render_prayer<'a>(rosary: &Rosary, window: &mut Window) -> Paragraph<'a> 
         rosarium
             .style(Style::default().add_modifier(Modifier::ITALIC).remove_modifier(Modifier::BOLD))
             .alignment(Alignment::Center)
-    }
+    })
 }
 
 
@@ -91,9 +91,9 @@ pub fn render_mysteries<'a>() -> Paragraph<'a> {
     progress
 }
 
-pub fn refresh(terminal: &mut Terminal<CrosstermBackend<Stdout>>, rosary: &Rosary, window: &mut Window) {
-    terminal.clear();
-    redraw(terminal, rosary, window);
+pub fn refresh(terminal: &mut Terminal<CrosstermBackend<Stdout>>, rosary: &Rosary, window: &mut Window) -> Result<(), Box<dyn Error>> {
+    terminal.clear()?;
+    redraw(terminal, rosary, window)
 }
 
 pub fn redraw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, rosary: &Rosary, window: &mut Window)
@@ -118,7 +118,11 @@ pub fn redraw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, rosary: &Rosary
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref(),)
             .split(chunks[1]);
 
-        rect.render_widget(render_prayer(&rosary, window), chunks[0]);
+        let prayer_window = render_prayer(&rosary, window);
+        if prayer_window.is_err() {
+            window.set_error(prayer_window.as_ref().err().as_ref().unwrap().to_string());
+        }
+        rect.render_widget(prayer_window.unwrap(), chunks[0]);
         rect.render_widget(render_progress(&rosary, window), bottom_bar[0]);
         rect.render_widget(render_mysteries(), bottom_bar[1]);
 

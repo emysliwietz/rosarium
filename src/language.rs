@@ -1,4 +1,3 @@
-use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use crate::config::{PRAYER_DIR, TITLE_FILE};
@@ -72,7 +71,7 @@ pub fn get_title_translation(lookup: &str, window: &mut Window) -> String {
     let reader = BufReader::new(file);
 
     // Read the file line by line using the lines() iterator from std::io::BufRead.
-    for (index, line) in reader.lines().enumerate() {
+    for (_index, line) in reader.lines().enumerate() {
         let line = line.expect("Error fetching line"); // Ignore errors.
         if line.starts_with(&(String::from(lookup) + ":")) {
             return String::from(line.split(":").nth(1).unwrap_or("no title found").trim());

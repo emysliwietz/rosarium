@@ -1,40 +1,20 @@
 use std::error::Error;
-use chrono::prelude::*;
 use crossterm::{
-    event::{self as CEvent, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode},
+    event::{KeyCode},
+    terminal::disable_raw_mode,
 };
-use rand::{distributions::Alphanumeric, prelude::*};
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::io;
 use std::io::Stdout;
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::sync::mpsc::Receiver;
 use crossterm::event::KeyEvent;
-use thiserror::Error;
 use tui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{
-        Block, BorderType, Borders, Cell, List, ListItem, ListState, Paragraph, Row, Table, Tabs,
-    },
     Terminal,
 };
-use tui::layout::Constraint::Percentage;
-use tui::symbols::line::{CROSS, THICK_CROSS};
-use tui::text::Text;
-use tui::widgets::Wrap;
-use crate::language::{get_title_translation, Language};
-use crate::rosary::{get_daily_mystery, Rosary};
-use crate::rosary::Prayer::{FirstMystery, FourthMystery, SecondMystery, ThirdMystery};
+use crate::language::Language;
+use crate::rosary::Rosary;
 
 use crate::language::Language::LATINA;
-use crate::render::{redraw, refresh, render_prayer, render_progress};
+use crate::render::{redraw, refresh};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MenuItem {
@@ -174,19 +154,19 @@ pub fn input_handler<'a>(rx: &Receiver<Event<KeyEvent>>, terminal: &'a mut Termi
                     terminal.show_cursor()?;
                     return Ok(&MenuItem::Quit);
                 }
-                KeyCode::Char('r') => refresh(terminal, &rosary, window),
+                KeyCode::Char('r') => refresh(terminal, &rosary, window)?,
                 KeyCode::Char('s') => return Ok(&MenuItem::Settings),
-                KeyCode::Char(' ') => advance(rosary, window),
-                KeyCode::Char('l') => advance(rosary, window),
-                KeyCode::Char('h') => recede(rosary, window),
-                KeyCode::Char('k') => scroll_down(window, &rosary),
-                KeyCode::Char('j') => scroll_up(window, &rosary),
+                KeyCode::Char(' ') => rosary.advance(),
+                KeyCode::Char('l') => rosary.advance(),
+                KeyCode::Char('h') => rosary.recede(),
+                KeyCode::Char('k') => window.down(),
+                KeyCode::Char('j') => window.up(),
                 KeyCode::Char('x') => window.cycle_language(),
-                KeyCode::Char('H') => scroll_left(window, &rosary),
-                KeyCode::Char('L') => scroll_right(window, &rosary),
-                KeyCode::Right => advance(rosary, window, ),
-                KeyCode::Backspace => recede(rosary, window),
-                KeyCode::Left => recede(rosary, window),
+                KeyCode::Char('H') => window.left(),
+                KeyCode::Char('L') => window.right(),
+                KeyCode::Right => rosary.advance(),
+                KeyCode::Backspace => rosary.recede(),
+                KeyCode::Left => rosary.recede(),
                 KeyCode::Up => {}
                 _ => {}
             }
@@ -206,38 +186,8 @@ pub fn key_listen<'a>(rx: &'a Receiver<Event<KeyEvent>>, terminal: &'a mut Termi
         window.set_error("Unable to read key.".to_owned());
         return active_menu_item.clone();
     }
-    let mut new_menu_item = new_menu_item.unwrap();
+    let new_menu_item = new_menu_item.unwrap();
     return *new_menu_item;
-}
-
-fn advance(rosary: &mut Rosary, window: &mut Window) {
-    rosary.advance();
-    render_progress(&rosary, window);
-}
-
-fn recede(rosary: &mut Rosary, window: &mut Window) {
-    rosary.recede();
-    render_progress(&rosary, window);
-}
-
-fn scroll_down(window: &mut Window, rosary: &Rosary) {
-    window.down();
-    render_prayer(rosary, window);
-}
-
-fn scroll_up(window: &mut Window, rosary: &Rosary) {
-    window.up();
-    render_prayer(rosary, window);
-}
-
-fn scroll_left(window: &mut Window, rosary: &Rosary) {
-    window.left();
-    render_prayer(rosary, window);
-}
-
-fn scroll_right(window: &mut Window, rosary: &Rosary) {
-    window.right();
-    render_prayer(rosary, window);
 }
 
 pub fn center(text: &String, window: &Window) -> String {
@@ -248,6 +198,6 @@ pub fn center(text: &String, window: &Window) -> String {
         }
     }
     let v_offset = window.get_vert_offset(text_width);
-    let offset_string = (" ".repeat(v_offset));
+    let offset_string = " ".repeat(v_offset);
     offset_string.clone() + &text.replace("\n", &("\n".to_owned() + &offset_string))
 }

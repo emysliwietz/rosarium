@@ -1,11 +1,10 @@
+use std::error::Error;
 use std::fs;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 
 use chrono::{Datelike, Weekday};
 use tui::style::Color;
 
-use crate::config::{INITIUM_FILE, MYSTERY_DIR, PRAYER_DIR, TITLE_FILE};
+use crate::config::{INITIUM_FILE, MYSTERY_DIR, PRAYER_DIR};
 use crate::language::{get_title_translation, ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 use crate::rosary::Prayer::{ApostlesCreed, FatimaOMyJesus, FifthMystery, FinalPrayer, FirstMystery, FourthMystery, GloryBe, HailHolyQueen, HailMary, HailMaryCharity, HailMaryFaith, HailMaryHope, Laudetur, OurFather, PrayerForPriests, PrayerToStJoseph, PrayerToStMichael, SecondMystery, SignOfCross, ThirdMystery};
@@ -85,7 +84,7 @@ impl Prayer {
         }
     }
 
-    pub fn get_prayer_text(&self, rosary: &Rosary, window: &Window) -> String {
+    pub fn get_prayer_text(&self, rosary: &Rosary, window: &Window) -> Result<String, Box<dyn Error>> {
         let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
         let text = fs::read_to_string(&file)
             .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file));
@@ -94,8 +93,8 @@ impl Prayer {
             if mystery_addition.is_ok() {
                 let mystery_addition = mystery_addition.unwrap();
                 let mut mystery_additions = mystery_addition.split("\n");
-                mystery_additions.advance_by((rosary.decade - 1) as usize);
-                return text.replace("Jesus.", &format!("Jesus,\n{}.", mystery_additions.next().unwrap_or("")));
+                (mystery_additions.advance_by((rosary.decade - 1) as usize)).expect("Mystery addition file incomplete");
+                return Ok(text.replace("Jesus.", &format!("Jesus,\n{}.", mystery_additions.next().unwrap_or(""))));
             }
         } else if self == &HailMaryFaith {
             return initial_hail_mary_addition(0, window, text);
@@ -104,7 +103,7 @@ impl Prayer {
         } else if self == &HailMaryCharity {
             return initial_hail_mary_addition(2, window, text);
         }
-        text
+        Ok(text)
     }
 
     pub fn get_prayer_title(&self, window: &mut Window) -> String {
@@ -123,15 +122,15 @@ impl Prayer {
     }
 }
 
-fn initial_hail_mary_addition(n: usize, window: &Window, text: String) -> String {
+fn initial_hail_mary_addition(n: usize, window: &Window, text: String) -> Result<String, Box<dyn Error>> {
     let mystery_addition = fs::read_to_string(PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + MYSTERY_DIR + "/" + INITIUM_FILE);
     if mystery_addition.is_ok() {
         let mystery_addition = mystery_addition.unwrap();
         let mut mystery_additions = mystery_addition.split("\n");
-        mystery_additions.advance_by(n);
-        return text.replace("Jesus.", &format!("Jesus,\n{}.", mystery_additions.next().unwrap_or("")));
+        mystery_additions.advance_by(n).expect("Mystery addition file incomplete");
+        return Ok(text.replace("Jesus.", &format!("Jesus,\n{}.", mystery_additions.next().unwrap_or(""))));
     }
-    return text;
+    return Ok(text);
 }
 
 impl ToString for Mysteries {

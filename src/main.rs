@@ -1,36 +1,19 @@
-use chrono::prelude::*;
-use crossterm::{
-    event::{self, Event as CEvent, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode},
-};
-use rand::{distributions::Alphanumeric, prelude::*};
-use serde::{Deserialize, Serialize};
-use std::fs;
 use std::io;
 use std::sync::mpsc;
 use std::thread;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
-use thiserror::Error;
+
+use crossterm::{
+    event::{self, Event as CEvent},
+    terminal::enable_raw_mode,
+};
 use tui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{
-        Block, BorderType, Borders, Cell, List, ListItem, ListState, Paragraph, Row, Table, Tabs,
-    },
     Terminal,
 };
-use tui::layout::Constraint::Percentage;
-use tui::symbols::line::{CROSS, THICK_CROSS};
-use tui::text::Text;
-use tui::widgets::Wrap;
-use rosarium::language::get_title_translation;
-use rosarium::render::{redraw, render_mysteries, render_prayer, render_progress};
-use rosarium::rosary::{get_daily_mystery, Rosary};
-use rosarium::rosary::Prayer::{FirstMystery, FourthMystery, SecondMystery, ThirdMystery};
-use rosarium::tui::{center, Event, input_handler, key_listen, MenuItem, Window};
+use rosarium::render::redraw;
+use rosarium::rosary::Rosary;
+use rosarium::tui::{Event, key_listen, MenuItem, Window};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode().expect("can run in raw mode");
