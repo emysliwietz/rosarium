@@ -4,37 +4,41 @@ ave_maria: Hail Mary
 gloria_patri: Glory Be
 oratio_ad_finem_rosarii: Prayer at the end of the rosary
 oratio_ad_sanctum_michael: Prayer to St. Michael the Archangel
+oratio_ad_sanctum_iosephum: Prayer to St. Joseph
 oratio_fatimae: Prayer of Fatima
 pater_noster: Our Father
 salve_regina: Hail Holy Queen
 sanctus: Sanctus
 signum_crucis: Sign of the cross
-symbolum_apostolorum: Aposles' Creed
+symbolum_apostolorum: Apostles' Creed
 symbolum_nicaenum: Nicene Creed
 laudetur_jesus_christus: Praised be Jesus Christ
 
 rosarium: Rosary
+pro_fide: for faith
+pro_spe: for hope
+pro_caritate: for charity
 
-mysteria/mysteria_gaudiosa_I: The Annunciation. Fruit of the Mystery: Humility
-mysteria/mysteria_gaudiosa_II: The Visitation. Fruit of the Mystery: Love of Neighbour
-mysteria/mysteria_gaudiosa_III: The Nativity. Fruit of the Mystery: Poverty, Detachment from the things of the world, Contempt of Riches, Love of the Poor
-mysteria/mysteria_gaudiosa_IV: The Presentation of Jesus at the Temple. Fruit of the Mystery: Gift of Wisdom and Purity of mind and body (Obedience)
-mysteria/mysteria_gaudiosa_V: The Finding of Jesus in the Temple. Fruit of the Mystery: True Conversion (Piety, Joy of Finding Jesus)
+mysteria/mysteria_gaudiosa_I: The Annunciation. Fruit of the Mystery is Humility
+mysteria/mysteria_gaudiosa_II: The Visitation. Fruit of the Mystery is Love of Neighbour
+mysteria/mysteria_gaudiosa_III: The Nativity. Fruit of the Mystery is Poverty, Detachment from the things of the world, Contempt of Riches, Love of the Poor
+mysteria/mysteria_gaudiosa_IV: The Presentation of Jesus at the Temple. Fruit of the Mystery is Gift of Wisdom and Purity of mind and body (Obedience)
+mysteria/mysteria_gaudiosa_V: The Finding of Jesus in the Temple. Fruit of the Mystery is True Conversion (Piety, Joy of Finding Jesus)
 
-mysteria/mysteria_luminosa_I: The Baptism of Jesus in the Jordan. Fruit of the Mystery: Openness to the Holy Spirit, the Healer.
-mysteria/mysteria_luminosa_II: The Wedding at Cana. Fruit of the Mystery: To Jesus through Mary, Understanding of the ability to manifest-through faith.
-mysteria/mysteria_luminosa_III: Jesus' Proclamation of the Kingdom of God. Fruit of the Mystery: Trust in God (Call of Conversion to the Messiah)
-mysteria/mysteria_luminosa_IV: The Transfiguration. Fruit of the Mystery: Desire for Holiness.
-mysteria/mysteria_luminosa_V: The Institution of the Eucharist. Fruit of the Mystery: Adoration.
+mysteria/mysteria_luminosa_I: The Baptism of Jesus in the Jordan. Fruit of the Mystery is Openness to the Holy Spirit, the Healer.
+mysteria/mysteria_luminosa_II: The Wedding at Cana. Fruit of the Mystery is To Jesus through Mary, Understanding of the ability to manifest-through faith.
+mysteria/mysteria_luminosa_III: Jesus' Proclamation of the Kingdom of God. Fruit of the Mystery is Trust in God (Call of Conversion to the Messiah)
+mysteria/mysteria_luminosa_IV: The Transfiguration. Fruit of the Mystery is Desire for Holiness.
+mysteria/mysteria_luminosa_V: The Institution of the Eucharist. Fruit of the Mystery is Adoration.
 
-mysteria/mysteria_dolorosa_I: The Agony in the Garden. Fruit of the Mystery: Sorrow for Sin, Uniformity with the Will of God
-mysteria/mysteria_dolorosa_II: The Scourging at the Pillar. Fruit of the Mystery: Mortification (Purity)
-mysteria/mysteria_dolorosa_III: The Crowning with Thorns. Fruit of the Mystery: Contempt of the World (Moral Courage)
-mysteria/mysteria_dolorosa_IV: The Carrying of the Cross. Fruit of the Mystery: Patience
-mysteria/mysteria_dolorosa_V: The Crucifixion and Death of our Lord. Fruit of the Mystery: Perseverance in Faith, Grace for a Holy Death, Forgiveness.
+mysteria/mysteria_dolorosa_I: The Agony in the Garden. Fruit of the Mystery is Sorrow for Sin, Uniformity with the Will of God
+mysteria/mysteria_dolorosa_II: The Scourging at the Pillar. Fruit of the Mystery is Mortification (Purity)
+mysteria/mysteria_dolorosa_III: The Crowning with Thorns. Fruit of the Mystery is Contempt of the World (Moral Courage)
+mysteria/mysteria_dolorosa_IV: The Carrying of the Cross. Fruit of the Mystery is Patience
+mysteria/mysteria_dolorosa_V: The Crucifixion and Death of our Lord. Fruit of the Mystery is Perseverance in Faith, Grace for a Holy Death, Forgiveness.
 
-mysteria/mysteria_gloriosa_I: The Resurrection. Fruit of the Mystery: Faith
-mysteria/mysteria_gloriosa_II: The Ascension. Fruit of the Mystery: Hope, Desire to Ascend to Heaven
-mysteria/mysteria_gloriosa_III: The Descent of the Holy Spirit. Fruit of the Mystery: Love of God, Holy Wisdom to know the truth and share it with everyone, Divine Charity, Worship of the Holy Spirit
-mysteria/mysteria_gloriosa_IV: The Assumption of Mary. Fruit of the Mystery: Union with Mary and True Devotion to Mary
-mysteria/mysteria_gloriosa_V: The Coronation of the Virgin. Fruit of the Mystery: Perseverance and an Increase in Virtue (Trust in Mary's Intercession)
+mysteria/mysteria_gloriosa_I: The Resurrection. Fruit of the Mystery is Faith
+mysteria/mysteria_gloriosa_II: The Ascension. Fruit of the Mystery is Hope, Desire to Ascend to Heaven
+mysteria/mysteria_gloriosa_III: The Descent of the Holy Spirit. Fruit of the Mystery is Love of God, Holy Wisdom to know the truth and share it with everyone, Divine Charity, Worship of the Holy Spirit
+mysteria/mysteria_gloriosa_IV: The Assumption of Mary. Fruit of the Mystery is Union with Mary and True Devotion to Mary
+mysteria/mysteria_gloriosa_V: The Coronation of the Virgin. Fruit of the Mystery is Perseverance and an Increase in Virtue (Trust in Mary's Intercession)
