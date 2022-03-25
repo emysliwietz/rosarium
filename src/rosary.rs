@@ -109,9 +109,9 @@ impl Prayer {
             ThirdMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(3), title.trim()),
             FourthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(4), title.trim()),
             FifthMystery => format!("{} Mysterium nuntiatur:\n{}", ordinal_n_acc_upper(5), title.trim()),
-            HailMaryFaith => format!("{} {}", title, "pro fide"),
-            HailMaryHope => format!("{} {}", title, "pro spe"),
-            HailMaryCharity => format!("{} {}", title, "pro caritate"),
+            HailMaryFaith => format!("{} {}", title, get_title_translation("pro_fide", window)),
+            HailMaryHope => format!("{} {}", title, get_title_translation("pro_spe", window)),
+            HailMaryCharity => format!("{} {}", title, get_title_translation("pro_caritate", window)),
             _ => title
         };
     }
