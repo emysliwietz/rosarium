@@ -3,6 +3,7 @@ use std::fs;
 
 use chrono::{Datelike, Weekday};
 use tui::style::Color;
+use crate::calender::get_daily_mystery_enum;
 
 use crate::config::{INITIUM_FILE, MYSTERY_DIR, PRAYER_DIR};
 use crate::language::{get_title_translation, ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};
@@ -143,20 +144,6 @@ impl ToString for Mysteries {
         };
 
         format!("Mysteria {}", mystery_adj)
-    }
-}
-
-fn get_daily_mystery_enum() -> Mysteries {
-    let current_time = chrono::offset::Local::now();
-    let weekday = current_time.date().weekday();
-    match weekday {
-        Weekday::Mon => Joyful,
-        Weekday::Tue => Sorrowful,
-        Weekday::Wed => Glorious,
-        Weekday::Thu => Luminous,
-        Weekday::Fri => Sorrowful,
-        Weekday::Sat => Joyful,
-        Weekday::Sun => Glorious
     }
 }
 

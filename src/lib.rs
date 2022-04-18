@@ -6,6 +6,7 @@ pub mod rosary;
 pub mod language;
 pub mod config;
 pub mod render;
+pub mod calender;
 
 #[cfg(test)]
 mod tests {
