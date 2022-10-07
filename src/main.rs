@@ -56,12 +56,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let mut active_menu_item: MenuItem = MenuItem::Rosary;
-
     redraw(&mut terminal, &rosary, &mut window)?;
 
     loop {
-        let q = key_listen(&rx, &mut terminal, &mut rosary, &mut window, &mut active_menu_item);
+        let q = key_listen(&rx, &mut terminal, &mut rosary, &mut window);
         if q == MenuItem::Quit {
             break;
         }

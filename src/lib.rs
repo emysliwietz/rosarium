@@ -7,6 +7,7 @@ pub mod language;
 pub mod config;
 pub mod render;
 pub mod calender;
+pub mod events;
 
 #[cfg(test)]
 mod tests {

@@ -10,7 +10,7 @@ use tui::{
     backend::CrosstermBackend,
     Terminal,
 };
-use crate::language::Language;
+use crate::{language::Language, events::{rosary_input_handler, evening_prayer_input_handler}};
 use crate::rosary::Rosary;
 
 use crate::language::Language::LATINA;
@@ -157,57 +157,37 @@ impl Window {
     }
 }
 
-pub fn input_handler<'a>(rx: &Receiver<Event<KeyEvent>>, terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-                         rosary: &'a mut Rosary,
-                         current_menu_item: &'a MenuItem,
-                         window: &'a mut Window) -> Result<&'a MenuItem, Box<dyn Error>> {
+pub fn input_handler<'a>(rx: &Receiver<Event<KeyEvent>>,
+                         terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+                         rosary: &mut Rosary,
+                         window: &mut Window) -> Result<MenuItem, Box<dyn Error>> {
     // Input handler
     match rx.recv()? {
         Event::Refresh(_, _) => {
-            redraw(terminal, &rosary, window)?
+            redraw(terminal, &rosary, window)?;
+            Ok(window.active_menu_item())
         },
         Event::Input(event) => {
-            match event.code {
-                KeyCode::Char('q') => {
-                    disable_raw_mode()?;
-                    terminal.show_cursor()?;
-                    return Ok(&MenuItem::Quit);
-                }
-                KeyCode::Char('r') => refresh(terminal, &rosary, window)?,
-                KeyCode::Char('s') => return Ok(&MenuItem::Settings),
-                KeyCode::Char(' ') => rosary.advance(),
-                KeyCode::Char('l') => rosary.advance(),
-                KeyCode::Char('h') => rosary.recede(),
-                KeyCode::Char('k') => window.down(),
-                KeyCode::Char('j') => window.up(),
-                KeyCode::Char('x') => window.cycle_language(),
-                KeyCode::Char('H') => window.left(),
-                KeyCode::Char('L') => window.right(),
-                KeyCode::Right => rosary.advance(),
-                KeyCode::Backspace => rosary.recede(),
-                KeyCode::Left => rosary.recede(),
-                KeyCode::Tab => window.cycle_item(),
-                KeyCode::Up => {}
-                _ => {}
+            match window.active_menu_item() {
+                MenuItem::Rosary => rosary_input_handler(&rx, terminal, rosary, window, &event),
+                MenuItem::EveningPrayer => evening_prayer_input_handler(&rx, terminal, rosary, window, &event),
+                _ => Ok(window.active_menu_item())
             }
-            redraw(terminal, &rosary, window)?;
         },
-        Event::Tick => {}
-    };
-    return Ok(current_menu_item);
+        Event::Tick => {Ok(window.active_menu_item())}
+    }
 }
 
 pub fn key_listen<'a>(rx: &'a Receiver<Event<KeyEvent>>, terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-                      rosary: &'a mut Rosary, window: &'a mut Window, active_menu_item: &'a mut MenuItem)
+                      rosary: &'a mut Rosary, window: &'a mut Window)
                       -> MenuItem {
     let new_menu_item = input_handler(&rx, terminal,
-                                      rosary, &active_menu_item, window);
+                                      rosary, window);
     if new_menu_item.is_err() {
         window.set_error("Unable to read key.".to_owned());
-        return active_menu_item.clone();
+        return window.active_menu_item();
     }
-    let new_menu_item = new_menu_item.unwrap();
-    return *new_menu_item;
+    new_menu_item.unwrap()
 }
 
 pub fn center(text: &String, window: &Window) -> String {

@@ -23,7 +23,7 @@ pub fn render_evening_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, B
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White).remove_modifier(Modifier::ITALIC))
-                .title(get_title_translation("Evening Prayer", window))
+                .title(get_title_translation("evening_prayer", window))
                 .border_type(BorderType::Rounded),
         );
     Ok(evening_prayer)
