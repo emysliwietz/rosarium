@@ -2,12 +2,25 @@ use chrono::{Datelike, DateTime, Local, NaiveDate, Weekday};
 use crate::rosary::Mysteries;
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
 
+pub fn weekday() -> &'static str {
+    match chrono::offset::Local::now().weekday() {
+        Weekday::Mon => "Monday",
+        Weekday::Tue => "Tuesday",
+        Weekday::Wed => "Wednesday",
+        Weekday::Thu => "Thursday",
+        Weekday::Fri => "Friday",
+        Weekday::Sat => "Saturday",
+        Weekday::Sun => "Sunday"
+    }
+}
+
+
 pub fn get_daily_mystery_enum() -> Mysteries {
     let current_time = chrono::offset::Local::now();
     if let Some(special) = special(current_time) {
        return special;
     }
-    let weekday = current_time.date().weekday();
+    let weekday = chrono::offset::Local::now().weekday();
     match weekday {
         Weekday::Mon => Joyful,
         Weekday::Tue => Sorrowful,

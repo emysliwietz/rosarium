@@ -6,12 +6,13 @@ use tui::style::{Color, Modifier, Style};
 use tui::Terminal;
 use tui::text::Text;
 use tui::widgets::{Block, Borders, BorderType, Paragraph, Wrap};
+use crate::calender::weekday;
 use crate::language::get_title_translation;
 use crate::rosary::{get_daily_mystery, Rosary};
 use crate::tui::{center, Window, MenuItem};
 
 pub fn render_evening_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
-    let prayer_text = Text::from("Hello");
+    let prayer_text = Text::from(weekday());
 
     let evening_prayer = Paragraph::new(
         prayer_text
@@ -22,7 +23,7 @@ pub fn render_evening_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, B
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White).remove_modifier(Modifier::ITALIC))
-                .title(get_title_translation("rosarium", window))
+                .title(get_title_translation("Evening Prayer", window))
                 .border_type(BorderType::Rounded),
         );
     Ok(evening_prayer)
@@ -150,12 +151,11 @@ pub fn draw_evening_prayer(terminal: &mut Terminal<CrosstermBackend<Stdout>>, wi
         .margin(1)
         .constraints(
             [
-                Constraint::Min(2),
-                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(0),
             ]
                 .as_ref(),
         );
-
     terminal.draw(|rect| {
         let size = rect.size();
         let chunks = chunks.split(size);
