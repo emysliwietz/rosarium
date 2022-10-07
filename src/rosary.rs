@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::fs;
 
-use chrono::{Datelike, Weekday};
 use tui::style::Color;
 use crate::calender::get_daily_mystery_enum;
 
