@@ -19,6 +19,7 @@ use crate::render::{redraw, refresh};
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MenuItem {
     Rosary,
+    EveningPrayer,
     Settings,
     Quit,
 }
@@ -28,7 +29,8 @@ impl From<MenuItem> for usize {
         match input {
             MenuItem::Quit => 0,
             MenuItem::Rosary => 1,
-            MenuItem::Settings => 2
+            MenuItem::Settings => 2,
+            MenuItem::EveningPrayer => 3,
         }
     }
 }
@@ -47,11 +49,20 @@ pub struct Window {
     parent_h: u16,
     parent_w: u16,
     last_error: String,
+    item: MenuItem,
 }
 
 impl Window {
     pub fn new() -> Window {
-        Window {x: 0, y: 0, lang: LATINA, parent_h: 0, parent_w: 0, last_error: String::from("")}
+        Window {x: 0, y: 0, lang: LATINA,
+                parent_h: 0, parent_w: 0,
+                last_error: String::from(""),
+                item: MenuItem::Rosary
+        }
+    }
+
+    pub fn active_menu_item(&self) -> MenuItem {
+        return self.item;
     }
 
     pub fn get_offset(&self) -> (u16, u16) {
@@ -136,6 +147,14 @@ impl Window {
             LATINA => {self.lang = Language::ANGLIA; }
         }
     }
+
+    pub fn cycle_item(&mut self) {
+        self.item = match self.item {
+            MenuItem::Rosary => { MenuItem::EveningPrayer }
+            MenuItem::EveningPrayer => {MenuItem::Rosary}
+            _ => {self.item}
+        }
+    }
 }
 
 pub fn input_handler<'a>(rx: &Receiver<Event<KeyEvent>>, terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
@@ -167,6 +186,7 @@ pub fn input_handler<'a>(rx: &Receiver<Event<KeyEvent>>, terminal: &'a mut Termi
                 KeyCode::Right => rosary.advance(),
                 KeyCode::Backspace => rosary.recede(),
                 KeyCode::Left => rosary.recede(),
+                KeyCode::Tab => window.cycle_item(),
                 KeyCode::Up => {}
                 _ => {}
             }
