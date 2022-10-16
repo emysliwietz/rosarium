@@ -44,7 +44,7 @@ impl EveningPrayers {
         format!("Unable find prayer {:?}\n at {}", self, &self.get_file())
     }
 
-    pub fn get_prayer_title(&self, window: &mut Window) -> String {
+    pub fn get_prayer_title(&self, window: &Window) -> String {
         get_title_translation(&self.get_file(), window)
     }
 }

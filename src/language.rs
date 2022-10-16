@@ -3,7 +3,7 @@ use crate::tui::Window;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Language {
     ANGLIA,
     GERMANA,
@@ -66,13 +66,12 @@ pub fn ordinal_n_gen(i: u8) -> &'static str {
     }
 }
 
-pub fn get_title_translation(lookup: &str, window: &mut Window) -> String {
+pub fn get_title_translation(lookup: &str, window: &Window) -> String {
     let filename = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + TITLE_FILE;
     // Open the file in read-only mode (ignoring errors).
     let file = File::open(&filename);
     if file.is_err() {
-        window.set_error(format!("Unable to open title file: {}", &filename));
-        return String::from("");
+        return format!("Unable to open title file: {}", &filename);
     }
     let file = file.unwrap();
     let reader = BufReader::new(file);

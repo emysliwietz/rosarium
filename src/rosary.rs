@@ -90,11 +90,7 @@ impl RosaryPrayer {
         }
     }
 
-    pub fn get_prayer_text(
-        &self,
-        rosary: &Rosary,
-        window: &Window,
-    ) -> Result<String, Box<dyn Error>> {
+    pub fn get_prayer_text(&self, window: &Window) -> Result<String, Box<dyn Error>> {
         let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
         let text = fs::read_to_string(&file)
             .unwrap_or(format!("Unable find prayer {:?}\n at {}", self, &file));
@@ -105,7 +101,7 @@ impl RosaryPrayer {
             if mystery_addition.is_ok() {
                 let mystery_addition = mystery_addition.unwrap();
                 let mut mystery_additions = mystery_addition.split("\n");
-                (mystery_additions.advance_by((rosary.decade - 1) as usize))
+                (mystery_additions.advance_by((window.rosary.decade - 1) as usize))
                     .expect("Mystery addition file incomplete");
                 return Ok(text.replace(
                     "Jesus.",

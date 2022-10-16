@@ -39,7 +39,72 @@ pub enum Event<I> {
     Tick,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
+pub enum WindowStack {
+    HSplit(Box<WindowStack>, Box<WindowStack>),
+    VSplit(Box<WindowStack>, Box<WindowStack>),
+    Node(Window),
+}
+
+pub struct Frame {
+    pub ws: WindowStack,
+}
+
+fn new_ws_box() -> Box<WindowStack> {
+    Box::from(WindowStack::Node(Window::new()))
+}
+
+pub fn _get_active_window(s: &mut WindowStack) -> Option<&mut Window> {
+    match s {
+        WindowStack::Node(w) => {
+            if w.is_active {
+                return Some(w);
+            }
+        }
+        WindowStack::HSplit(v, w) => {
+            let v = _get_active_window(v);
+            let w = _get_active_window(w);
+            if v.is_some() {
+                return v;
+            } else if w.is_some() {
+                return w;
+            }
+        }
+        WindowStack::VSplit(v, w) => {
+            let v = _get_active_window(v);
+            let w = _get_active_window(w);
+            if v.is_some() {
+                return v;
+            } else if w.is_some() {
+                return w;
+            }
+        }
+    };
+    return None;
+}
+
+impl Frame {
+    pub fn new() -> Frame {
+        let mut w = Window::new();
+        w.is_active = true;
+        let w = WindowStack::Node(w);
+        Frame { ws: w }
+    }
+
+    pub fn get_active_window(&mut self) -> &mut Window {
+        return _get_active_window(&mut self.ws).unwrap();
+    }
+
+    pub fn vsplit(mut self) {
+        self.ws = WindowStack::VSplit(Box::from(self.ws), new_ws_box())
+    }
+
+    pub fn hsplit(mut self) {
+        self.ws = WindowStack::HSplit(Box::from(self.ws), new_ws_box())
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct Window {
     x: u16,
     y: u16,
@@ -48,6 +113,9 @@ pub struct Window {
     parent_w: u16,
     last_error: String,
     item: MenuItem,
+    pub is_active: bool,
+    pub rosary: Rosary,
+    pub evening_prayer: EveningPrayer,
 }
 
 impl Window {
@@ -60,6 +128,9 @@ impl Window {
             parent_w: 0,
             last_error: String::from(""),
             item: MenuItem::Rosary,
+            is_active: false,
+            rosary: Rosary::new(),
+            evening_prayer: EveningPrayer::new(),
         }
     }
 
@@ -175,40 +246,34 @@ impl Window {
 pub fn input_handler<'a>(
     rx: &Receiver<Event<KeyEvent>>,
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    rosary: &mut Rosary,
-    evening_prayer: &mut EveningPrayer,
-    window: &mut Window,
+    frame: &mut Frame,
 ) -> Result<MenuItem, Box<dyn Error>> {
     // Input handler
     match rx.recv()? {
         Event::Refresh(_, _) => {
-            redraw(terminal, &rosary, evening_prayer, window)?;
-            Ok(window.active_menu_item())
+            redraw(terminal, frame)?;
+            Ok(frame.get_active_window().active_menu_item())
         }
-        Event::Input(event) => match window.active_menu_item() {
-            MenuItem::Rosary => {
-                rosary_input_handler(&rx, terminal, rosary, evening_prayer, window, &event)
-            }
-            MenuItem::EveningPrayer => {
-                evening_prayer_input_handler(&rx, terminal, rosary, evening_prayer, window, &event)
-            }
-            _ => Ok(window.active_menu_item()),
+        Event::Input(event) => match frame.get_active_window().active_menu_item() {
+            MenuItem::Rosary => rosary_input_handler(&rx, terminal, frame, &event),
+            MenuItem::EveningPrayer => evening_prayer_input_handler(&rx, terminal, frame, &event),
+            _ => Ok(frame.get_active_window().active_menu_item()),
         },
-        Event::Tick => Ok(window.active_menu_item()),
+        Event::Tick => Ok(frame.get_active_window().active_menu_item()),
     }
 }
 
 pub fn key_listen<'a>(
     rx: &'a Receiver<Event<KeyEvent>>,
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-    rosary: &'a mut Rosary,
-    evening_prayer: &'a mut EveningPrayer,
-    window: &'a mut Window,
+    frame: &'a mut Frame,
 ) -> MenuItem {
-    let new_menu_item = input_handler(&rx, terminal, rosary, evening_prayer, window);
+    let new_menu_item = input_handler(&rx, terminal, frame);
     if new_menu_item.is_err() {
-        window.set_error("Unable to read key.".to_owned());
-        return window.active_menu_item();
+        frame
+            .get_active_window()
+            .set_error("Unable to read key.".to_owned());
+        return frame.get_active_window().active_menu_item();
     }
     new_menu_item.unwrap()
 }

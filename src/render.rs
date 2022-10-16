@@ -2,22 +2,19 @@ use crate::calender::weekday;
 use crate::language::get_title_translation;
 use crate::prayer::EveningPrayer;
 use crate::rosary::{get_daily_mystery, Rosary};
-use crate::tui::{MenuItem, Window};
+use crate::tui::{Frame, MenuItem, Window, WindowStack};
 use crate::tui_util::{center_p, cursive_p, hcenter};
 use std::error::Error;
 use std::io::Stdout;
 use tui::backend::CrosstermBackend;
-use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
 use tui::widgets::{Block, BorderType, Borders, Paragraph, Wrap};
 use tui::Terminal;
 
-pub fn render_evening_prayer<'a>(
-    evening_prayer: &mut EveningPrayer,
-    window: &mut Window,
-) -> Result<Paragraph<'a>, Box<dyn Error>> {
-    let prayer = evening_prayer.to_prayer();
+pub fn render_evening_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
+    let prayer = window.evening_prayer.to_prayer().clone();
     let prayer_render = cursive_p(
         prayer.get_prayer_text(window),
         "evening_prayer",
@@ -27,12 +24,9 @@ pub fn render_evening_prayer<'a>(
     Ok(prayer_render)
 }
 
-pub fn render_prayer<'a>(
-    rosary: &Rosary,
-    window: &mut Window,
-) -> Result<Paragraph<'a>, Box<dyn Error>> {
-    let rosary_prayer = rosary.to_prayer();
-    let mut prayer_words = rosary_prayer.get_prayer_text(rosary, window)?;
+pub fn render_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
+    let rosary_prayer = window.rosary.to_prayer();
+    let mut prayer_words = rosary_prayer.get_prayer_text(window)?;
     let mut prayer_title = rosary_prayer.get_prayer_title(window);
     if rosary_prayer.is_mystery() {
         prayer_title = hcenter(&prayer_title, window);
@@ -95,11 +89,11 @@ pub fn render_prayer<'a>(
     })
 }
 
-pub fn render_progress<'a>(rosary: &Rosary, window: &mut Window) -> Paragraph<'a> {
+pub fn render_progress<'a>(window: &mut Window) -> Paragraph<'a> {
     let mut progress = Paragraph::new(if window.has_error() {
         window.error()
     } else {
-        rosary.progress()
+        window.rosary.progress()
     })
     .alignment(Alignment::Right)
     .block(
@@ -130,78 +124,105 @@ pub fn render_mysteries<'a>() -> Paragraph<'a> {
 }
 
 pub fn draw_rosary(
-    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    rosary: &Rosary,
     window: &mut Window,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
-    let chunks = Layout::default()
+    let main_split = Layout::default()
         .direction(Direction::Vertical)
-        .margin(1)
-        .constraints([Constraint::Min(2), Constraint::Length(3)].as_ref());
-    terminal.draw(|rect| {
-        // Window layout
-        let size = rect.size();
-        let chunks = chunks.split(size);
+        .constraints([Constraint::Min(0), Constraint::Max(3)])
+        .split(*chunk);
+    let bottom_bar = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(main_split[1]);
 
-        let bottom_bar = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-            .split(chunks[1]);
+    let prayer_window = render_prayer(window);
+    if prayer_window.is_err() {
+        window.set_error(prayer_window.as_ref().err().as_ref().unwrap().to_string());
+    }
+    rect.render_widget(prayer_window.unwrap(), main_split[0]);
+    rect.render_widget(render_progress(window), bottom_bar[0]);
+    rect.render_widget(render_mysteries(), bottom_bar[1]);
 
-        let prayer_window = render_prayer(&rosary, window);
-        if prayer_window.is_err() {
-            window.set_error(prayer_window.as_ref().err().as_ref().unwrap().to_string());
-        }
-        rect.render_widget(prayer_window.unwrap(), chunks[0]);
-        rect.render_widget(render_progress(&rosary, window), bottom_bar[0]);
-        rect.render_widget(render_mysteries(), bottom_bar[1]);
-
-        window.set_parent_dims(chunks[0].width, chunks[0].height);
-    })?;
+    window.set_parent_dims(chunk.width, chunk.height);
     Ok(())
 }
 
 pub fn draw_evening_prayer(
-    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    evening_prayer: &mut EveningPrayer,
     window: &mut Window,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(1)
-        .constraints([Constraint::Min(0), Constraint::Length(0)].as_ref());
-    terminal.draw(|rect| {
-        let size = rect.size();
-        let chunks = chunks.split(size);
-        let prayer_window = render_evening_prayer(evening_prayer, window);
-        if prayer_window.is_err() {
-            window.set_error(prayer_window.as_ref().err().as_ref().unwrap().to_string());
-        }
-        rect.render_widget(prayer_window.unwrap(), chunks[0]);
+    let size = rect.size();
+    let prayer_window = render_evening_prayer(window);
+    if prayer_window.is_err() {
+        window.set_error(prayer_window.as_ref().err().as_ref().unwrap().to_string());
+    }
+    rect.render_widget(prayer_window.unwrap(), *chunk);
 
-        window.set_parent_dims(chunks[0].width, chunks[0].height);
-    })?;
+    window.set_parent_dims(chunk.width, chunk.height);
     Ok(())
 }
 
 pub fn refresh(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    rosary: &Rosary,
-    evening_prayer: &mut EveningPrayer,
-    window: &mut Window,
+    frame: &mut Frame,
 ) -> Result<(), Box<dyn Error>> {
     terminal.clear()?;
-    redraw(terminal, rosary, evening_prayer, window)
+    redraw(terminal, frame)
 }
 
 pub fn redraw(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    rosary: &Rosary,
-    evening_prayer: &mut EveningPrayer,
+    frame: &mut Frame,
+) -> Result<(), Box<dyn Error>> {
+    terminal.draw(|rect| {
+        let mut chunk: Rect = rect.size();
+        redraw_recursive(&mut frame.ws, rect, &mut chunk);
+    })?;
+    // let chunks: Layout = Layout::default()
+    //     .direction(Direction::Vertical)
+    //    .margin(1)
+    //   .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref());
+    Ok(())
+}
+
+fn redraw_recursive(
+    ws: &mut WindowStack,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
+) -> Result<(), Box<dyn Error>> {
+    match ws {
+        WindowStack::Node(w) => redraw_window(w, rect, chunk),
+        WindowStack::HSplit(v, w) => {
+            let mut hlayout = Layout::default()
+                .margin(1)
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(*chunk);
+            redraw_recursive(v, rect, &mut hlayout[0]);
+            redraw_recursive(v, rect, &mut hlayout[1])
+        }
+        WindowStack::VSplit(v, w) => {
+            let mut vlayout = Layout::default()
+                .margin(1)
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(*chunk);
+            redraw_recursive(v, rect, &mut vlayout[0]);
+            redraw_recursive(v, rect, &mut vlayout[1])
+        }
+    }
+}
+
+fn redraw_window(
     window: &mut Window,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
     match window.active_menu_item() {
-        MenuItem::Rosary => draw_rosary(terminal, rosary, window),
+        MenuItem::Rosary => draw_rosary(window, rect, chunk),
         MenuItem::Settings => {
             /*let layout = Layout::default()
             .direction(Direction::Horizontal)
@@ -212,7 +233,7 @@ pub fn redraw(
             Ok(())
         }
         MenuItem::Quit => Ok(()),
-        MenuItem::EveningPrayer => draw_evening_prayer(terminal, evening_prayer, window),
+        MenuItem::EveningPrayer => draw_evening_prayer(window, rect, chunk),
     };
     Ok(())
 }
