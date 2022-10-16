@@ -6,13 +6,18 @@ oratio_ad_finem_rosarii: Prayer at the end of the rosary
 oratio_ad_sanctum_michael: Prayer to St. Michael the Archangel
 oratio_ad_sanctum_iosephum: Prayer to St. Joseph
 oratio_fatimae: Prayer of Fatima
+oratio_Iesu: Jesus Prayer
 pater_noster: Our Father
 salve_regina: Hail Holy Queen
 sanctus: Sanctus
 signum_crucis: Sign of the cross
 symbolum_apostolorum: Apostles' Creed
 symbolum_nicaenum: Nicene Creed
-laudetur_jesus_christus: Praised be Jesus Christ
+laudetur_Iesus_Christus: Praised be Jesus Christ
+
+jordanville/prayer_before_sleep: Prayer Before Sleep
+jordanville/troparia_before_sleep: Troparia
+jordanville/st_macarius_the_great: Prayer of St. Macarius the Great
 
 evening_prayer: Evening Prayer
 rosarium: Rosary

@@ -1,13 +1,15 @@
 #![feature(iter_advance_by)]
 extern crate core;
 
-pub mod tui;
-pub mod rosary;
-pub mod language;
-pub mod config;
-pub mod render;
 pub mod calender;
+pub mod config;
 pub mod events;
+pub mod language;
+pub mod prayer;
+pub mod render;
+pub mod rosary;
+pub mod tui;
+pub mod tui_util;
 
 #[cfg(test)]
 mod tests {

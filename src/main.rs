@@ -7,24 +7,22 @@ use crossterm::{
     event::{self, Event as CEvent},
     terminal::enable_raw_mode,
 };
-use tui::{
-    backend::CrosstermBackend,
-    Terminal,
-};
+use rosarium::prayer::EveningPrayer;
 use rosarium::render::redraw;
 use rosarium::rosary::Rosary;
-use rosarium::tui::{Event, key_listen, MenuItem, Window};
+use rosarium::tui::{key_listen, Event, MenuItem, Window};
+use tui::{backend::CrosstermBackend, Terminal};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode().expect("can run in raw mode");
 
     let mut rosary = Rosary::new();
+    let mut evening_prayer = EveningPrayer::new();
     let mut window = Window::new();
 
     // Event loop
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(200);
-
 
     // Create terminal
     let stdout = io::stdout();
@@ -56,10 +54,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    redraw(&mut terminal, &rosary, &mut window)?;
+    redraw(&mut terminal, &rosary, &mut evening_prayer, &mut window)?;
 
     loop {
-        let q = key_listen(&rx, &mut terminal, &mut rosary, &mut window);
+        let q = key_listen(
+            &rx,
+            &mut terminal,
+            &mut rosary,
+            &mut evening_prayer,
+            &mut window,
+        );
         if q == MenuItem::Quit {
             break;
         }

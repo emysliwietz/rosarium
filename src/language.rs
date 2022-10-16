@@ -1,13 +1,18 @@
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 use crate::config::{PRAYER_DIR, TITLE_FILE};
 use crate::tui::Window;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Language {
     ANGLIA,
     GERMANA,
     LATINA,
+    SLAVONICA,
+}
+
+impl Language {
+    pub const VALUES: [Self; 4] = [Self::ANGLIA, Self::GERMANA, Self::LATINA, Self::SLAVONICA];
 }
 
 impl ToString for Language {
@@ -16,7 +21,9 @@ impl ToString for Language {
             Language::ANGLIA => "anglia",
             Language::GERMANA => "germana",
             Language::LATINA => "latina",
-        }.to_owned()
+            Language::SLAVONICA => "slavonica_antiqua",
+        }
+        .to_owned()
     }
 }
 
@@ -33,7 +40,7 @@ pub fn ordinal_n_acc(i: u8) -> &'static str {
         8 => "octavum",
         9 => "nonum",
         10 => "decimum",
-        _ => ""
+        _ => "",
     }
 }
 
@@ -55,7 +62,7 @@ pub fn ordinal_n_gen(i: u8) -> &'static str {
         8 => "octavi",
         9 => "noni",
         10 => "decimi",
-        _ => ""
+        _ => "",
     }
 }
 
@@ -77,5 +84,5 @@ pub fn get_title_translation(lookup: &str, window: &mut Window) -> String {
             return String::from(line.split(":").nth(1).unwrap_or("no title found").trim());
         }
     }
-    return format!("No title found for prayer {}", lookup)
+    return format!("No title found for prayer {}", lookup);
 }
