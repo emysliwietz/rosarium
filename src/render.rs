@@ -233,6 +233,7 @@ fn redraw_window(
             Ok(())
         }
         MenuItem::Quit => Ok(()),
+        MenuItem::_NOQUIT => Ok(()),
         MenuItem::EveningPrayer => draw_evening_prayer(window, rect, chunk),
     };
     Ok(())

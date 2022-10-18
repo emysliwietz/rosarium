@@ -27,6 +27,12 @@ impl EveningPrayers {
         })
     }
 
+    pub fn load_audio(&self, window: &mut Window) -> Option<String> {
+        let file =
+            PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file() + ".ogg";
+        fs::read_to_string(file).ok()
+    }
+
     pub fn get_prayer_text(&self, window: &mut Window) -> String {
         let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
         fs::read_to_string(&file).unwrap_or(self.get_fallback_prayer_text(window))

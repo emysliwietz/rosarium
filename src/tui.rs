@@ -1,3 +1,4 @@
+use crate::events::general_input_handler;
 use crate::prayer::EveningPrayer;
 use crate::rosary::Rosary;
 use crate::{
@@ -6,9 +7,12 @@ use crate::{
 };
 use crossterm::event::KeyEvent;
 use crossterm::{event::KeyCode, terminal::disable_raw_mode};
+use rand::rngs::adapter::ReadError;
+use serde_json::ser::Formatter;
 use std::error::Error;
 use std::io::Stdout;
 use std::sync::mpsc::Receiver;
+use std::{fmt, mem};
 use tui::{backend::CrosstermBackend, Terminal};
 
 use crate::language::Language::LATINA;
@@ -16,6 +20,7 @@ use crate::render::{redraw, refresh};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MenuItem {
+    _NOQUIT,
     Rosary,
     EveningPrayer,
     Settings,
@@ -25,6 +30,9 @@ pub enum MenuItem {
 impl From<MenuItem> for usize {
     fn from(input: MenuItem) -> usize {
         match input {
+            // Use _NOQUIT when calculating the true menu item is too costly,
+            // but only the QUIT behavior is important
+            MenuItem::_NOQUIT => 255,
             MenuItem::Quit => 0,
             MenuItem::Rosary => 1,
             MenuItem::Settings => 2,
@@ -33,6 +41,7 @@ impl From<MenuItem> for usize {
     }
 }
 
+#[derive(Debug)]
 pub enum Event<I> {
     Input(I),
     Refresh(u16, u16),
@@ -95,12 +104,14 @@ impl Frame {
         return _get_active_window(&mut self.ws).unwrap();
     }
 
-    pub fn vsplit(mut self) {
-        self.ws = WindowStack::VSplit(Box::from(self.ws), new_ws_box())
+    pub fn vsplit(mut self) -> Frame {
+        self.ws = WindowStack::VSplit(Box::from(self.ws), new_ws_box());
+        self
     }
 
-    pub fn hsplit(mut self) {
-        self.ws = WindowStack::HSplit(Box::from(self.ws), new_ws_box())
+    pub fn hsplit(mut self) -> Frame {
+        self.ws = WindowStack::HSplit(Box::from(self.ws), new_ws_box());
+        self
     }
 }
 
@@ -243,37 +254,69 @@ impl Window {
     }
 }
 
+#[derive(Debug)]
+struct InvalidFocusError;
+
+impl fmt::Display for InvalidFocusError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Pressed key in unknown window")
+    }
+}
+impl Error for InvalidFocusError {}
+
 pub fn input_handler<'a>(
     rx: &Receiver<Event<KeyEvent>>,
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    frame: &mut Frame,
-) -> Result<MenuItem, Box<dyn Error>> {
+    mut frame: Frame,
+) -> (Frame, Result<MenuItem, Box<dyn Error>>) {
     // Input handler
-    match rx.recv()? {
+    let evnt = rx.recv();
+    if evnt.is_err() {
+        return (frame, Err(Box::new(InvalidFocusError)));
+    }
+    match rx.recv().unwrap() {
         Event::Refresh(_, _) => {
-            redraw(terminal, frame)?;
-            Ok(frame.get_active_window().active_menu_item())
+            let a = redraw(terminal, &mut frame);
+            if a.is_err() {
+                return (frame, Err(a.unwrap_err()));
+            }
+            (frame, Ok(MenuItem::_NOQUIT))
         }
-        Event::Input(event) => match frame.get_active_window().active_menu_item() {
-            MenuItem::Rosary => rosary_input_handler(&rx, terminal, frame, &event),
-            MenuItem::EveningPrayer => evening_prayer_input_handler(&rx, terminal, frame, &event),
-            _ => Ok(frame.get_active_window().active_menu_item()),
-        },
-        Event::Tick => Ok(frame.get_active_window().active_menu_item()),
+        Event::Input(event) => {
+            let (mut frame, gih) = general_input_handler(rx, terminal, frame, &event);
+            if gih.is_none() {
+                let ami = frame.get_active_window().active_menu_item();
+                match ami {
+                    MenuItem::Rosary => {
+                        let rih = rosary_input_handler(&rx, terminal, &mut frame, &event);
+                        (frame, rih)
+                    }
+                    MenuItem::EveningPrayer => {
+                        let epih = evening_prayer_input_handler(&rx, terminal, &mut frame, &event);
+                        (frame, epih)
+                    }
+                    _ => (frame, Ok(ami)),
+                }
+            } else {
+                (frame, gih.ok_or(Box::new(InvalidFocusError)))
+            }
+        }
+        Event::Tick => (frame, Ok(MenuItem::_NOQUIT)),
     }
 }
 
 pub fn key_listen<'a>(
     rx: &'a Receiver<Event<KeyEvent>>,
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-    frame: &'a mut Frame,
-) -> MenuItem {
-    let new_menu_item = input_handler(&rx, terminal, frame);
+    frame: Frame,
+) -> (Frame, MenuItem) {
+    let (mut frame, new_menu_item) = input_handler(&rx, terminal, frame);
     if new_menu_item.is_err() {
         frame
             .get_active_window()
             .set_error("Unable to read key.".to_owned());
-        return frame.get_active_window().active_menu_item();
+        let ami = frame.get_active_window().active_menu_item();
+        return (frame, ami);
     }
-    new_menu_item.unwrap()
+    (frame, new_menu_item.unwrap())
 }

@@ -14,6 +14,44 @@ use std::io::Stdout;
 use std::sync::mpsc::Receiver;
 use tui::{backend::CrosstermBackend, Terminal};
 
+pub fn general_input_handler<'a>(
+    rx: &Receiver<Event<KeyEvent>>,
+    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+    mut frame: Frame,
+    event: &KeyEvent,
+) -> (Frame, Option<MenuItem>) {
+    match event.code {
+        KeyCode::Char('q') => {
+            let a = disable_raw_mode();
+            let b = terminal.show_cursor();
+            if a.is_err() || b.is_err() {
+                return (frame, None);
+            }
+            return (frame, Some(MenuItem::Quit));
+        }
+        KeyCode::Char('r') => {
+            let a = refresh(terminal, &mut frame);
+            if a.is_err() {
+                return (frame, None);
+            }
+        }
+
+        KeyCode::Tab => frame.get_active_window().cycle_item(),
+        KeyCode::Char('k') => frame.get_active_window().down(),
+        KeyCode::Char('j') => frame.get_active_window().up(),
+        KeyCode::Char('x') => frame.get_active_window().cycle_language(),
+        KeyCode::Char('H') => frame = frame.hsplit(),
+        KeyCode::Char('L') => frame = frame.vsplit(),
+        _ => return (frame, None),
+    }
+    let a = redraw(terminal, &mut frame);
+    if a.is_err() {
+        return (frame, None);
+    }
+    let active_menu_item = frame.get_active_window().active_menu_item();
+    (frame, Some(active_menu_item))
+}
+
 pub fn rosary_input_handler<'a>(
     rx: &Receiver<Event<KeyEvent>>,
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
@@ -26,19 +64,12 @@ pub fn rosary_input_handler<'a>(
             terminal.show_cursor()?;
             return Ok(MenuItem::Quit);
         }
-        KeyCode::Char('r') => refresh(terminal, frame)?,
         KeyCode::Char(' ') => frame.get_active_window().rosary.advance(),
         KeyCode::Char('l') => frame.get_active_window().rosary.advance(),
         KeyCode::Char('h') => frame.get_active_window().rosary.recede(),
-        KeyCode::Char('k') => frame.get_active_window().down(),
-        KeyCode::Char('j') => frame.get_active_window().up(),
-        KeyCode::Char('x') => frame.get_active_window().cycle_language(),
-        KeyCode::Char('H') => frame.get_active_window().left(),
-        KeyCode::Char('L') => frame.get_active_window().right(),
+        KeyCode::Left => frame.get_active_window().rosary.recede(),
         KeyCode::Right => frame.get_active_window().rosary.advance(),
         KeyCode::Backspace => frame.get_active_window().rosary.recede(),
-        KeyCode::Left => frame.get_active_window().rosary.recede(),
-        KeyCode::Tab => frame.get_active_window().cycle_item(),
         _ => {}
     }
     redraw(terminal, frame)?;
@@ -57,19 +88,12 @@ pub fn evening_prayer_input_handler<'a>(
             terminal.show_cursor()?;
             return Ok(MenuItem::Quit);
         }
-        KeyCode::Char('r') => refresh(terminal, frame)?,
         KeyCode::Char(' ') => frame.get_active_window().evening_prayer.advance(),
         KeyCode::Char('l') => frame.get_active_window().evening_prayer.advance(),
         KeyCode::Char('h') => frame.get_active_window().evening_prayer.recede(),
+        KeyCode::Left => frame.get_active_window().evening_prayer.recede(),
         KeyCode::Right => frame.get_active_window().evening_prayer.advance(),
         KeyCode::Backspace => frame.get_active_window().evening_prayer.recede(),
-        KeyCode::Left => frame.get_active_window().evening_prayer.recede(),
-        KeyCode::Char('k') => frame.get_active_window().down(),
-        KeyCode::Char('j') => frame.get_active_window().up(),
-        KeyCode::Char('x') => frame.get_active_window().cycle_language(),
-        KeyCode::Char('H') => frame.get_active_window().left(),
-        KeyCode::Char('L') => frame.get_active_window().right(),
-        KeyCode::Tab => frame.get_active_window().cycle_item(),
         _ => {}
     }
     redraw(terminal, frame)?;

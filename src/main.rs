@@ -39,24 +39,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if event::poll(timeout).expect("poll works") {
                 if let CEvent::Key(key) = event::read().expect("can't read events") {
                     tx.send(Event::Input(key)).expect("can't send events");
+                    tx.send(Event::Input(key)).expect("can't send events");
+                    // println!("{:?}", Event::Input(key));
                 } else if let CEvent::Resize(x, y) = event::read().expect("can't read events") {
                     tx.send(Event::Refresh(x, y)).expect("can't send events");
                 }
             }
-
+            /*
             if last_tick.elapsed() >= tick_rate {
                 if let Ok(_) = tx.send(Event::Tick) {
                     last_tick = Instant::now();
                 }
-            }
+            }*/
         }
     });
 
-    terminal.autoresize();
     redraw(&mut terminal, &mut frame)?;
 
     loop {
-        let q = key_listen(&rx, &mut terminal, &mut frame);
+        let (f, q) = key_listen(&rx, &mut terminal, frame);
+        frame = f;
         if q == MenuItem::Quit {
             break;
         }
