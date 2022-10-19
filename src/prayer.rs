@@ -4,7 +4,7 @@ use crate::{
     tui::Window,
 };
 
-use rand::{seq::SliceRandom, thread_rng, Rng};
+use rand::{seq::SliceRandom, thread_rng};
 use std::fs;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

@@ -6,17 +6,15 @@ use crate::{
     language::Language,
 };
 use crossterm::event::KeyEvent;
-use crossterm::{event::KeyCode, terminal::disable_raw_mode};
-use rand::rngs::adapter::ReadError;
-use serde_json::ser::Formatter;
+
 use std::error::Error;
+use std::fmt;
 use std::io::Stdout;
 use std::sync::mpsc::Receiver;
-use std::{fmt, mem};
 use tui::{backend::CrosstermBackend, Terminal};
 
 use crate::language::Language::LATINA;
-use crate::render::{redraw, refresh};
+use crate::render::redraw;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MenuItem {
@@ -116,6 +114,11 @@ impl Frame {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum Popup {
+    Audio,
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct Window {
     x: u16,
     y: u16,
@@ -124,6 +127,7 @@ pub struct Window {
     parent_w: u16,
     last_error: String,
     item: MenuItem,
+    popup: Option<Popup>,
     pub is_active: bool,
     pub rosary: Rosary,
     pub evening_prayer: EveningPrayer,
@@ -139,6 +143,7 @@ impl Window {
             parent_w: 0,
             last_error: String::from(""),
             item: MenuItem::Rosary,
+            popup: None,
             is_active: false,
             rosary: Rosary::new(),
             evening_prayer: EveningPrayer::new(),
@@ -283,16 +288,16 @@ pub fn input_handler<'a>(
             (frame, Ok(MenuItem::_NOQUIT))
         }
         Event::Input(event) => {
-            let (mut frame, gih) = general_input_handler(rx, terminal, frame, &event);
+            let (mut frame, gih) = general_input_handler(terminal, frame, &event);
             if gih.is_none() {
                 let ami = frame.get_active_window().active_menu_item();
                 match ami {
                     MenuItem::Rosary => {
-                        let rih = rosary_input_handler(&rx, terminal, &mut frame, &event);
+                        let rih = rosary_input_handler(terminal, &mut frame, &event);
                         (frame, rih)
                     }
                     MenuItem::EveningPrayer => {
-                        let epih = evening_prayer_input_handler(&rx, terminal, &mut frame, &event);
+                        let epih = evening_prayer_input_handler(terminal, &mut frame, &event);
                         (frame, epih)
                     }
                     _ => (frame, Ok(ami)),

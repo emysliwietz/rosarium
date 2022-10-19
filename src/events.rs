@@ -1,21 +1,15 @@
 use crate::{
-    prayer::EveningPrayer,
     render::{redraw, refresh},
-    rosary::Rosary,
-    tui::{Event, Frame, MenuItem, Window},
+    tui::{Event, Frame, MenuItem},
 };
 use crossterm::event::KeyEvent;
-use crossterm::{
-    event::{self, KeyCode},
-    terminal::disable_raw_mode,
-};
+use crossterm::{event::KeyCode, terminal::disable_raw_mode};
 use std::error::Error;
 use std::io::Stdout;
 use std::sync::mpsc::Receiver;
 use tui::{backend::CrosstermBackend, Terminal};
 
 pub fn general_input_handler<'a>(
-    rx: &Receiver<Event<KeyEvent>>,
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     mut frame: Frame,
     event: &KeyEvent,
@@ -53,7 +47,6 @@ pub fn general_input_handler<'a>(
 }
 
 pub fn rosary_input_handler<'a>(
-    rx: &Receiver<Event<KeyEvent>>,
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     frame: &'a mut Frame,
     event: &KeyEvent,
@@ -77,7 +70,6 @@ pub fn rosary_input_handler<'a>(
 }
 
 pub fn evening_prayer_input_handler<'a>(
-    rx: &Receiver<Event<KeyEvent>>,
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     frame: &'a mut Frame,
     event: &KeyEvent,

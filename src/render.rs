@@ -1,9 +1,8 @@
-use crate::calender::weekday;
 use crate::language::get_title_translation;
-use crate::prayer::EveningPrayer;
-use crate::rosary::{get_daily_mystery, Rosary};
+
+use crate::rosary::get_daily_mystery;
 use crate::tui::{Frame, MenuItem, Window, WindowStack};
-use crate::tui_util::{center_p, cursive_p, hcenter};
+use crate::tui_util::{cursive_p, hcenter};
 use std::error::Error;
 use std::io::Stdout;
 use tui::backend::CrosstermBackend;
@@ -154,7 +153,6 @@ pub fn draw_evening_prayer(
     rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
-    let size = rect.size();
     let prayer_window = render_evening_prayer(window);
     if prayer_window.is_err() {
         window.set_error(prayer_window.as_ref().err().as_ref().unwrap().to_string());
@@ -202,7 +200,7 @@ fn redraw_recursive(
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(*chunk);
             redraw_recursive(v, rect, &mut hlayout[0]);
-            redraw_recursive(v, rect, &mut hlayout[1])
+            redraw_recursive(w, rect, &mut hlayout[1])
         }
         WindowStack::VSplit(v, w) => {
             let mut vlayout = Layout::default()
@@ -211,7 +209,7 @@ fn redraw_recursive(
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(*chunk);
             redraw_recursive(v, rect, &mut vlayout[0]);
-            redraw_recursive(v, rect, &mut vlayout[1])
+            redraw_recursive(w, rect, &mut vlayout[1])
         }
     }
 }

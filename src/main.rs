@@ -7,10 +7,10 @@ use crossterm::{
     event::{self, Event as CEvent},
     terminal::enable_raw_mode,
 };
-use rosarium::prayer::EveningPrayer;
+
 use rosarium::render::redraw;
-use rosarium::rosary::Rosary;
-use rosarium::tui::{key_listen, Event, Frame, MenuItem, Window};
+
+use rosarium::tui::{key_listen, Event, Frame, MenuItem};
 use tui::{backend::CrosstermBackend, Terminal};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.clear()?;
 
     thread::spawn(move || {
-        let mut last_tick = Instant::now();
+        let last_tick = Instant::now();
         loop {
             let timeout = tick_rate
                 .checked_sub(last_tick.elapsed())

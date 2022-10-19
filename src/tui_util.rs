@@ -40,7 +40,7 @@ pub fn cursive_p<'a>(
     title: String,
     w: &mut Window,
 ) -> Paragraph<'a> {
-    let mut title = title_from_s(title, w);
+    let title = title_from_s(title, w);
     let mut text = Text::from(hcenter(&text, w));
     text.patch_style(
         Style::default()
