@@ -3,10 +3,11 @@ use crate::{
     language::{get_title_translation, Language},
     tui::Window,
 };
-
-use rand::{seq::SliceRandom, thread_rng};
+use chrono::Datelike;
+use rand::{rngs::StdRng, seq::SliceRandom, thread_rng, SeedableRng};
+use rand_pcg::Pcg64;
+use rand_seeder::{Seeder, SipHasher};
 use std::fs;
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum EveningPrayers {
     None,
@@ -76,7 +77,11 @@ impl EveningPrayer {
                 EveningPrayers::TropariaBeforeSleep,
             ],
         };
-        let mut rng = thread_rng();
+        let today = chrono::offset::Local::now()
+            .date()
+            .naive_local()
+            .num_days_from_ce() as u64;
+        let mut rng = StdRng::seed_from_u64(today);
         ep.prayers
             .push(final_prayers.choose(&mut rng).unwrap().clone());
         ep
