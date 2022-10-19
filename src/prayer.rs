@@ -1,3 +1,4 @@
+use crate::rosary::RosaryPrayer;
 use crate::{
     config::PRAYER_DIR,
     language::{get_title_translation, Language},
@@ -8,33 +9,21 @@ use rand::{rngs::StdRng, seq::SliceRandom, thread_rng, SeedableRng};
 use rand_pcg::Pcg64;
 use rand_seeder::{Seeder, SipHasher};
 use std::fs;
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum EveningPrayers {
-    None,
-    OratioIesu,
-    PrayerBeforeSleep,
-    StMacariusTheGreat,
-    TropariaBeforeSleep,
-}
+use std::str::FromStr;
 
-impl EveningPrayers {
-    fn get_file(&self) -> String {
-        String::from(match self {
-            EveningPrayers::OratioIesu => "oratio_Iesu",
-            EveningPrayers::PrayerBeforeSleep => "jordanville/prayer_before_sleep",
-            EveningPrayers::StMacariusTheGreat => "jordanville/st_macarius_the_great",
-            EveningPrayers::TropariaBeforeSleep => "jordanville/troparia_before_sleep",
-            _ => "",
-        })
+pub trait Prayer {
+    fn get_file(&self) -> String;
+    fn get_prayer_title(&self, window: &Window) -> String {
+        get_title_translation(&self.get_file(), window)
     }
 
-    pub fn load_audio(&self, window: &mut Window) -> Option<String> {
+    fn load_audio(&self, window: &mut Window) -> Option<String> {
         let file =
             PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file() + ".ogg";
         fs::read_to_string(file).ok()
     }
 
-    pub fn get_prayer_text(&self, window: &mut Window) -> String {
+    fn get_prayer_text(&self, window: &mut Window) -> String {
         let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
         fs::read_to_string(&file).unwrap_or(self.get_fallback_prayer_text(window))
     }
@@ -48,19 +37,85 @@ impl EveningPrayers {
                 return prayer_text.unwrap();
             }
         }
-        format!("Unable find prayer {:?}\n at {}", self, &self.get_file())
-    }
-
-    pub fn get_prayer_title(&self, window: &Window) -> String {
-        get_title_translation(&self.get_file(), window)
+        format!("Unable find prayer at {}", &self.get_file())
     }
 }
 
+impl std::fmt::Debug for dyn Prayer {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.get_file())
+    }
+}
+
+impl std::cmp::PartialEq for dyn Prayer {
+    fn eq(&self, other: &Self) -> bool {
+        self.get_file() == other.get_file()
+    }
+}
+
+impl ToString for Box<dyn Prayer> {
+    fn to_string(&self) -> String {
+        String::from(self.get_file())
+    }
+}
+
+impl FromStr for Box<dyn Prayer> {
+    type Err = Box<dyn std::error::Error>;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Box::new(_Prayer::new(String::from(s))))
+    }
+}
+
+impl std::cmp::Eq for dyn Prayer {}
+
+/// A struct only used to construct generic Prayer type objects
+pub struct _Prayer {
+    file: String,
+}
+
+impl Prayer for _Prayer {
+    fn get_file(&self) -> String {
+        return String::from(&self.file);
+    }
+}
+
+impl _Prayer {
+    fn new(file: String) -> Self {
+        _Prayer { file }
+    }
+}
+
+/// Convert reference to Prayer type object to owned Prayer via cloning
+pub fn to_owned(b: &Box<dyn Prayer>) -> Box<dyn Prayer> {
+    Box::new(_Prayer::new(b.get_file()))
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub enum EveningPrayers {
+    None,
+    OratioIesu,
+    PrayerBeforeSleep,
+    StMacariusTheGreat,
+    TropariaBeforeSleep,
+}
+
+impl Prayer for EveningPrayers {
+    fn get_file(&self) -> String {
+        String::from(match self {
+            EveningPrayers::OratioIesu => "oratio_Iesu",
+            EveningPrayers::PrayerBeforeSleep => "jordanville/prayer_before_sleep",
+            EveningPrayers::StMacariusTheGreat => "jordanville/st_macarius_the_great",
+            EveningPrayers::TropariaBeforeSleep => "jordanville/troparia_before_sleep",
+            _ => "",
+        })
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct EveningPrayer {
     /// Number of current prayer
     curr_prayer: u8,
-    prayers: Vec<EveningPrayers>,
+    prayers: Vec<Box<dyn Prayer>>,
 }
 
 impl EveningPrayer {
@@ -73,8 +128,9 @@ impl EveningPrayer {
         let mut ep = EveningPrayer {
             curr_prayer: 0,
             prayers: vec![
-                EveningPrayers::PrayerBeforeSleep,
-                EveningPrayers::TropariaBeforeSleep,
+                //Box::new(RosaryPrayer::SignOfCross),
+                Box::new(EveningPrayers::PrayerBeforeSleep),
+                Box::new(EveningPrayers::TropariaBeforeSleep),
             ],
         };
         let today = chrono::offset::Local::now()
@@ -83,14 +139,12 @@ impl EveningPrayer {
             .num_days_from_ce() as u64;
         let mut rng = StdRng::seed_from_u64(today);
         ep.prayers
-            .push(final_prayers.choose(&mut rng).unwrap().clone());
+            .push(Box::new(final_prayers.choose(&mut rng).unwrap().clone()));
         ep
     }
 
-    pub fn to_prayer(&self) -> &EveningPrayers {
-        self.prayers
-            .get(self.curr_prayer as usize)
-            .unwrap_or(&EveningPrayers::None)
+    pub fn to_prayer(&self) -> Box<dyn Prayer> {
+        to_owned(self.prayers.get(self.curr_prayer as usize).unwrap())
     }
 
     pub fn advance(&mut self) {

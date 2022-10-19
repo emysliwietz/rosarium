@@ -13,7 +13,7 @@ use tui::widgets::{Block, BorderType, Borders, Paragraph, Wrap};
 use tui::Terminal;
 
 pub fn render_evening_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
-    let prayer = window.evening_prayer.to_prayer().clone();
+    let prayer = window.evening_prayer.to_prayer();
     let prayer_render = cursive_p(
         prayer.get_prayer_text(window),
         "evening_prayer",
