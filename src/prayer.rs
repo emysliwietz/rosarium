@@ -6,9 +6,9 @@ use crate::{
 };
 use chrono::Datelike;
 use rand::{rngs::StdRng, seq::SliceRandom, thread_rng, SeedableRng};
-use rand_pcg::Pcg64;
-use rand_seeder::{Seeder, SipHasher};
+use soloud::{audio, AudioExt, LoadExt, Wav, WavStream};
 use std::fs;
+use std::path::Path;
 use std::str::FromStr;
 
 pub trait Prayer {
@@ -17,15 +17,65 @@ pub trait Prayer {
         get_title_translation(&self.get_file(), window)
     }
 
-    fn load_audio(&self, window: &mut Window) -> Option<String> {
-        let file =
-            PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file() + ".ogg";
-        fs::read_to_string(file).ok()
+    fn load_audio(&self, window: &mut Window) -> Option<WavStream> {
+        let audio_file = PRAYER_DIR.to_owned()
+            + "/"
+            + &window.language()
+            + "/cantus/"
+            + &self.get_file()
+            + ".wav";
+        if Path::new(&audio_file).exists() {
+            let mut wav = audio::WavStream::default();
+            let audio = wav.load(&std::path::Path::new(&audio_file));
+            if audio.is_ok() {
+                Some(wav)
+            } else {
+                None
+            }
+        } else {
+            self.load_fallback_prayer_audio(window)
+        }
+    }
+
+    fn load_fallback_prayer_audio(&self, window: &mut Window) -> Option<WavStream> {
+        for lan in Language::VALUES.iter() {
+            let audio_file = PRAYER_DIR.to_owned()
+                + "/"
+                + &lan.to_string()
+                + "/cantus/"
+                + &self.get_file()
+                + ".wav";
+            if Path::new(&audio_file).exists() {
+                let mut wav = audio::WavStream::default();
+                let audio = wav.load(&std::path::Path::new(&audio_file));
+                if audio.is_ok() {
+                    window.set_language(lan);
+                    return Some(wav);
+                }
+            }
+        }
+        None
     }
 
     fn get_prayer_text(&self, window: &mut Window) -> String {
         let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
         fs::read_to_string(&file).unwrap_or(self.get_fallback_prayer_text(window))
+    }
+
+    fn get_prayer_text_for_language(&self, lang: &Language) -> String {
+        let file = PRAYER_DIR.to_owned() + "/" + &lang.to_string() + "/" + &self.get_file();
+        fs::read_to_string(&file).unwrap_or(format!("{} not found", lang.to_string()))
+    }
+
+    fn title_text_audio(&self, window: &mut Window) -> (String, String, Option<WavStream>) {
+        let audio = self.load_audio(window);
+        let text = if audio.is_none() {
+            self.get_prayer_text(window)
+        } else {
+            self.get_prayer_text_for_language(window.get_language())
+        };
+        let title = self.get_prayer_title(window);
+        (title, text, audio)
     }
 
     fn get_fallback_prayer_text(&self, window: &mut Window) -> String {
@@ -95,8 +145,9 @@ pub enum EveningPrayers {
     None,
     OratioIesu,
     PrayerBeforeSleep,
-    StMacariusTheGreat,
     TropariaBeforeSleep,
+    StMacariusTheGreat,
+    StAntiochus,
 }
 
 impl Prayer for EveningPrayers {
@@ -104,8 +155,9 @@ impl Prayer for EveningPrayers {
         String::from(match self {
             EveningPrayers::OratioIesu => "oratio_Iesu",
             EveningPrayers::PrayerBeforeSleep => "jordanville/prayer_before_sleep",
-            EveningPrayers::StMacariusTheGreat => "jordanville/st_macarius_the_great",
             EveningPrayers::TropariaBeforeSleep => "jordanville/troparia_before_sleep",
+            EveningPrayers::StMacariusTheGreat => "jordanville/st_macarius_the_great",
+            EveningPrayers::StAntiochus => "jordanville/st_antiochus",
             _ => "",
         })
     }
@@ -122,6 +174,7 @@ impl EveningPrayer {
     pub fn new() -> EveningPrayer {
         let final_prayers = vec![
             EveningPrayers::StMacariusTheGreat,
+            EveningPrayers::StAntiochus,
             EveningPrayers::OratioIesu,
         ];
 

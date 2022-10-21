@@ -5,9 +5,10 @@ use std::io::{BufRead, BufReader};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Language {
-    ANGLIA,
-    GERMANA,
     LATINA,
+
+    GERMANA,
+    ANGLIA,
     SLAVONICA,
 }
 
@@ -18,9 +19,9 @@ impl Language {
 impl ToString for Language {
     fn to_string(&self) -> String {
         match self {
-            Language::ANGLIA => "anglia",
-            Language::GERMANA => "germana",
             Language::LATINA => "latina",
+            Language::GERMANA => "germana",
+            Language::ANGLIA => "anglia",
             Language::SLAVONICA => "slavonica_antiqua",
         }
         .to_owned()

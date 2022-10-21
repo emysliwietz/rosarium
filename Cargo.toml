@@ -17,5 +17,4 @@ rand = { version = "0.7.3", default-features = false, features = ["std"] }
 tui = { version = "0.14", default-features = false, features = ['crossterm', 'serde'] }
 thiserror = "1.0"
 bdays = "0.1.2"
-rand_seeder = "0.2.3"
-rand_pcg = "0.3.1"
+soloud = "1.0.2"

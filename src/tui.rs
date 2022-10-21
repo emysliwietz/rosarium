@@ -6,6 +6,7 @@ use crate::{
     language::Language,
 };
 use crossterm::event::KeyEvent;
+use soloud::Soloud;
 
 use std::error::Error;
 use std::fmt;
@@ -55,6 +56,7 @@ pub enum WindowStack {
 
 pub struct Frame {
     pub ws: WindowStack,
+    pub sl: Soloud,
 }
 
 fn new_ws_box() -> Box<WindowStack> {
@@ -92,10 +94,11 @@ pub fn _get_active_window(s: &mut WindowStack) -> Option<&mut Window> {
 
 impl Frame {
     pub fn new() -> Frame {
+        let mut sl = Soloud::default().expect("Error initializing audio");
         let mut w = Window::new();
         w.is_active = true;
-        let w = WindowStack::Node(w);
-        Frame { ws: w }
+        let ws = WindowStack::Node(w);
+        Frame { ws, sl }
     }
 
     pub fn get_active_window(&mut self) -> &mut Window {
@@ -211,6 +214,10 @@ impl Window {
 
     pub fn language(&self) -> String {
         self.lang.to_string()
+    }
+
+    pub fn get_language(&self) -> &Language {
+        &self.lang
     }
 
     pub fn has_error(&self) -> bool {
