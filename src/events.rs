@@ -36,6 +36,9 @@ pub fn general_input_handler<'a>(
         KeyCode::Char('x') => frame.get_active_window().cycle_language(),
         KeyCode::Char('H') => frame = frame.hsplit(),
         KeyCode::Char('L') => frame = frame.vsplit(),
+        KeyCode::Char('p') => {
+            frame.toggle_audio();
+        }
         _ => return (frame, None),
     }
     let a = redraw(terminal, &mut frame);

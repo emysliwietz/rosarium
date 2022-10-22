@@ -15,6 +15,7 @@ use tui::Terminal;
 pub fn render_evening_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
     let prayer = window.evening_prayer.to_prayer();
     let (title, text, audio) = prayer.title_text_audio(window);
+    window.audio = audio;
     let prayer_render = cursive_p(text, "evening_prayer", title, window);
     Ok(prayer_render)
 }

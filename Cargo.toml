@@ -6,6 +6,8 @@ edition = "2021"
 [[bin]]
 name = "rosarium"
 
+[profile.release]
+debug = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -18,3 +20,4 @@ tui = { version = "0.14", default-features = false, features = ['crossterm', 'se
 thiserror = "1.0"
 bdays = "0.1.2"
 soloud = "1.0.2"
+pprof = { version = "0.10", features = ["flamegraph"] }

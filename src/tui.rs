@@ -1,3 +1,4 @@
+use crate::audio::{audio_thread, AudioCommand};
 use crate::events::general_input_handler;
 use crate::prayer::EveningPrayer;
 use crate::rosary::Rosary;
@@ -6,12 +7,14 @@ use crate::{
     language::Language,
 };
 use crossterm::event::KeyEvent;
-use soloud::Soloud;
+use soloud::{AudioExt, LoadExt, Soloud, Speech, Wav, WavStream};
 
+use std::borrow::Borrow;
 use std::error::Error;
 use std::fmt;
 use std::io::Stdout;
-use std::sync::mpsc::Receiver;
+use std::path::Path;
+use std::sync::mpsc::{self, Receiver, Sender};
 use tui::{backend::CrosstermBackend, Terminal};
 
 use crate::language::Language::LATINA;
@@ -47,7 +50,7 @@ pub enum Event<I> {
     Tick,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub enum WindowStack {
     HSplit(Box<WindowStack>, Box<WindowStack>),
     VSplit(Box<WindowStack>, Box<WindowStack>),
@@ -56,7 +59,7 @@ pub enum WindowStack {
 
 pub struct Frame {
     pub ws: WindowStack,
-    pub sl: Soloud,
+    tx: Sender<AudioCommand>,
 }
 
 fn new_ws_box() -> Box<WindowStack> {
@@ -92,17 +95,51 @@ pub fn _get_active_window(s: &mut WindowStack) -> Option<&mut Window> {
     return None;
 }
 
+pub fn _get_active_window_read_only(s: &WindowStack) -> Option<&Window> {
+    match s {
+        WindowStack::Node(w) => {
+            if w.is_active {
+                return Some(&w);
+            }
+        }
+        WindowStack::HSplit(v, w) => {
+            let v = _get_active_window_read_only(v);
+            let w = _get_active_window_read_only(w);
+            if v.is_some() {
+                return v;
+            } else if w.is_some() {
+                return w;
+            }
+        }
+        WindowStack::VSplit(v, w) => {
+            let v = _get_active_window_read_only(v);
+            let w = _get_active_window_read_only(w);
+            if v.is_some() {
+                return v;
+            } else if w.is_some() {
+                return w;
+            }
+        }
+    };
+    return None;
+}
+
 impl Frame {
     pub fn new() -> Frame {
-        let mut sl = Soloud::default().expect("Error initializing audio");
         let mut w = Window::new();
         w.is_active = true;
         let ws = WindowStack::Node(w);
-        Frame { ws, sl }
+        let (tx, rx) = mpsc::channel();
+        audio_thread(rx);
+        Frame { ws, tx }
     }
 
     pub fn get_active_window(&mut self) -> &mut Window {
         return _get_active_window(&mut self.ws).unwrap();
+    }
+
+    pub fn get_active_window_ro(&self) -> &Window {
+        return _get_active_window_read_only(&self.ws).unwrap();
     }
 
     pub fn vsplit(mut self) -> Frame {
@@ -114,6 +151,19 @@ impl Frame {
         self.ws = WindowStack::HSplit(Box::from(self.ws), new_ws_box());
         self
     }
+
+    pub fn toggle_audio(&mut self) {
+        let caw = self.get_active_window();
+        let is_playing = caw.is_playing;
+        if !is_playing && caw.audio.is_some() {
+            let audio = caw.audio.as_ref().unwrap().to_owned();
+            self.tx.send(AudioCommand::Play(audio));
+            self.get_active_window().is_playing = true;
+        } else {
+            self.tx.send(AudioCommand::Pause);
+            self.get_active_window().is_playing = false;
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -121,7 +171,7 @@ pub enum Popup {
     Audio,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct Window {
     x: u16,
     y: u16,
@@ -131,6 +181,8 @@ pub struct Window {
     last_error: String,
     item: MenuItem,
     popup: Option<Popup>,
+    is_playing: bool,
+    pub audio: Option<String>,
     pub is_active: bool,
     pub rosary: Rosary,
     pub evening_prayer: EveningPrayer,
@@ -148,6 +200,8 @@ impl Window {
             item: MenuItem::Rosary,
             popup: None,
             is_active: false,
+            is_playing: false,
+            audio: None,
             rosary: Rosary::new(),
             evening_prayer: EveningPrayer::new(),
         }

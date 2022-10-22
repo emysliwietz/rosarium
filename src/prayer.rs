@@ -17,7 +17,7 @@ pub trait Prayer {
         get_title_translation(&self.get_file(), window)
     }
 
-    fn load_audio(&self, window: &mut Window) -> Option<WavStream> {
+    fn load_audio(&self, window: &mut Window) -> Option<String> {
         let audio_file = PRAYER_DIR.to_owned()
             + "/"
             + &window.language()
@@ -25,19 +25,13 @@ pub trait Prayer {
             + &self.get_file()
             + ".wav";
         if Path::new(&audio_file).exists() {
-            let mut wav = audio::WavStream::default();
-            let audio = wav.load(&std::path::Path::new(&audio_file));
-            if audio.is_ok() {
-                Some(wav)
-            } else {
-                None
-            }
+            Some(audio_file)
         } else {
             self.load_fallback_prayer_audio(window)
         }
     }
 
-    fn load_fallback_prayer_audio(&self, window: &mut Window) -> Option<WavStream> {
+    fn load_fallback_prayer_audio(&self, window: &mut Window) -> Option<String> {
         for lan in Language::VALUES.iter() {
             let audio_file = PRAYER_DIR.to_owned()
                 + "/"
@@ -46,12 +40,7 @@ pub trait Prayer {
                 + &self.get_file()
                 + ".wav";
             if Path::new(&audio_file).exists() {
-                let mut wav = audio::WavStream::default();
-                let audio = wav.load(&std::path::Path::new(&audio_file));
-                if audio.is_ok() {
-                    window.set_language(lan);
-                    return Some(wav);
-                }
+                return Some(audio_file);
             }
         }
         None
@@ -67,7 +56,7 @@ pub trait Prayer {
         fs::read_to_string(&file).unwrap_or(format!("{} not found", lang.to_string()))
     }
 
-    fn title_text_audio(&self, window: &mut Window) -> (String, String, Option<WavStream>) {
+    fn title_text_audio(&self, window: &mut Window) -> (String, String, Option<String>) {
         let audio = self.load_audio(window);
         let text = if audio.is_none() {
             self.get_prayer_text(window)
@@ -182,6 +171,7 @@ impl EveningPrayer {
             curr_prayer: 0,
             prayers: vec![
                 //Box::new(RosaryPrayer::SignOfCross),
+                Box::new(EveningPrayers::OratioIesu),
                 Box::new(EveningPrayers::PrayerBeforeSleep),
                 Box::new(EveningPrayers::TropariaBeforeSleep),
             ],

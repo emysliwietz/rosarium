@@ -28,31 +28,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    thread::spawn(move || {
-        let last_tick = Instant::now();
-        loop {
-            let timeout = tick_rate
-                .checked_sub(last_tick.elapsed())
-                .unwrap_or_else(|| Duration::from_secs(0));
+    thread::Builder::new()
+        .name("rosarium - keylistener".to_string())
+        .spawn(move || {
+            let last_tick = Instant::now();
+            loop {
+                let timeout = tick_rate
+                    .checked_sub(last_tick.elapsed())
+                    .unwrap_or_else(|| Duration::from_secs(200));
 
-            // Handle key events
-            if event::poll(timeout).expect("poll works") {
-                if let CEvent::Key(key) = event::read().expect("can't read events") {
-                    tx.send(Event::Input(key)).expect("can't send events");
-                    tx.send(Event::Input(key)).expect("can't send events");
-                    // println!("{:?}", Event::Input(key));
-                } else if let CEvent::Resize(x, y) = event::read().expect("can't read events") {
-                    tx.send(Event::Refresh(x, y)).expect("can't send events");
+                // Handle key events
+                if event::poll(timeout).expect("poll works") {
+                    if let CEvent::Key(key) = event::read().expect("can't read events") {
+                        tx.send(Event::Input(key)).expect("can't send events");
+                        tx.send(Event::Input(key)).expect("can't send events");
+                        // println!("{:?}", Event::Input(key));
+                    } else if let CEvent::Resize(x, y) = event::read().expect("can't read events") {
+                        tx.send(Event::Refresh(x, y)).expect("can't send events");
+                    }
                 }
+                /*
+                if last_tick.elapsed() >= tick_rate {
+                    if let Ok(_) = tx.send(Event::Tick) {
+                        last_tick = Instant::now();
+                    }
+                }*/
             }
-            /*
-            if last_tick.elapsed() >= tick_rate {
-                if let Ok(_) = tx.send(Event::Tick) {
-                    last_tick = Instant::now();
-                }
-            }*/
-        }
-    });
+        });
 
     redraw(&mut terminal, &mut frame)?;
 

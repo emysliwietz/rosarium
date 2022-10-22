@@ -1,6 +1,7 @@
 #![feature(iter_advance_by)]
 extern crate core;
 
+pub mod audio;
 pub mod calender;
 pub mod config;
 pub mod events;
