@@ -6,10 +6,9 @@ use std::io::{BufRead, BufReader};
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Language {
     LATINA,
-
     GERMANA,
-    ANGLIA,
     SLAVONICA,
+    ANGLIA,
 }
 
 impl Language {

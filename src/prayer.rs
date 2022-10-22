@@ -46,6 +46,18 @@ pub trait Prayer {
         None
     }
 
+    fn get_available_languages(&self) -> Vec<Language> {
+        let mut languages = vec![];
+        for lan in Language::VALUES.iter() {
+            let audio_file =
+                PRAYER_DIR.to_owned() + "/" + &lan.to_string() + "/" + &self.get_file() + ".wav";
+            if Path::new(&audio_file).exists() {
+                languages.push(lan.to_owned());
+            }
+        }
+        return languages;
+    }
+
     fn get_prayer_text(&self, window: &mut Window) -> String {
         let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
         fs::read_to_string(&file).unwrap_or(self.get_fallback_prayer_text(window))
