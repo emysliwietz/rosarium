@@ -152,14 +152,13 @@ impl Frame {
 
     pub fn toggle_audio(&mut self) {
         let caw = self.get_active_window();
-        let is_playing = caw.is_playing;
         if caw.audio.is_some() {
             let audio = caw.audio.as_ref().unwrap().to_owned();
+            caw.is_playing = true;
             self.tx.send(AudioCommand::Play(audio));
-            self.get_active_window().is_playing = true;
         } else {
+            caw.is_playing = false;
             self.tx.send(AudioCommand::Pause);
-            self.get_active_window().is_playing = false;
         }
     }
 }
