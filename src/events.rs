@@ -34,6 +34,9 @@ pub fn general_input_handler<'a>(
         KeyCode::Char('k') => frame.get_active_window().down(),
         KeyCode::Char('j') => frame.get_active_window().up(),
         KeyCode::Char('x') => frame.get_active_window().cycle_language(),
+        KeyCode::Char('v') => frame.toggle_volume_popup(),
+        KeyCode::Char('h') => frame.lower_volume(),
+        KeyCode::Char('l') => frame.raise_volume(),
         KeyCode::Char('H') => frame = frame.hsplit(),
         KeyCode::Char('L') => frame = frame.vsplit(),
         KeyCode::Char('p') => {

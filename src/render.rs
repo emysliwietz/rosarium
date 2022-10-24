@@ -1,15 +1,15 @@
 use crate::language::{self, get_title_translation};
 
 use crate::rosary::get_daily_mystery;
-use crate::tui::{Frame, MenuItem, Window, WindowStack};
-use crate::tui_util::{cursive_p, hcenter};
+use crate::tui::{Frame, MenuItem, Popup, Window, WindowStack};
+use crate::tui_util::{centered_rect, cursive_p, hcenter};
 use std::error::Error;
 use std::io::Stdout;
 use tui::backend::CrosstermBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
-use tui::widgets::{Block, BorderType, Borders, Paragraph, Wrap};
+use tui::widgets::{Block, BorderType, Borders, Clear, Gauge, LineGauge, Paragraph, Widget, Wrap};
 use tui::Terminal;
 
 pub fn render_prayer_set<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
@@ -121,6 +121,14 @@ pub fn render_mysteries<'a>() -> Paragraph<'a> {
     progress
 }
 
+pub fn render_volume<'a>(frame: &mut Frame) -> Gauge<'a> {
+    Gauge::default()
+        .block(Block::default().borders(Borders::ALL).title("Volume"))
+        .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
+        .use_unicode(true)
+        .ratio(frame.get_volume() as f64)
+}
+
 pub fn draw_rosary(
     window: &mut Window,
     rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
@@ -162,6 +170,29 @@ pub fn draw_prayer_set(
     Ok(())
 }
 
+pub fn draw_frame_popup(
+    frame: &mut Frame,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
+) {
+    if frame.get_popup().is_none() {
+        return;
+    }
+    match frame.get_popup().unwrap() {
+        &Popup::Volume => draw_volume_popup(frame, rect, chunk),
+    }
+}
+
+pub fn draw_volume_popup(
+    frame: &mut Frame,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
+) {
+    let popup_chunk = centered_rect(80, 1, 3, chunk);
+    rect.render_widget(Clear, popup_chunk);
+    rect.render_widget(render_volume(frame), popup_chunk);
+}
+
 pub fn refresh(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     frame: &mut Frame,
@@ -177,6 +208,7 @@ pub fn redraw(
     terminal.draw(|rect| {
         let mut chunk: Rect = rect.size();
         redraw_recursive(&mut frame.ws, rect, &mut chunk);
+        draw_frame_popup(frame, rect, &mut chunk);
     })?;
     // let chunks: Layout = Layout::default()
     //     .direction(Direction::Vertical)

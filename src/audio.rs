@@ -2,10 +2,10 @@ use std::{path::Path, sync::mpsc::Receiver, thread, time::Duration};
 
 use soloud::{AudioExt, Handle, LoadExt, Soloud, WavStream};
 
-#[derive(PartialEq, Eq)]
 pub enum AudioCommand {
     Play(String),
     Pause,
+    SetVolume(f32),
 }
 
 pub fn audio_thread(mut rx: Receiver<AudioCommand>) {
@@ -19,6 +19,7 @@ pub fn audio_thread(mut rx: Receiver<AudioCommand>) {
                 match cmd {
                     AudioCommand::Play(s) => play_audio(&mut rx, &mut sl, s),
                     AudioCommand::Pause => sl.set_pause_all(true),
+                    AudioCommand::SetVolume(v) => sl.set_global_volume(v),
                 }
             }
         });
@@ -38,6 +39,7 @@ pub fn play_audio(rx: &mut Receiver<AudioCommand>, sl: &mut Soloud, s: String) {
             AudioCommand::Play(n) => {
                 return fade_to(s, n, rx, sl, h);
             }
+            AudioCommand::SetVolume(v) => sl.set_global_volume(v),
         }
     }
 }

@@ -55,9 +55,16 @@ pub enum WindowStack {
     Node(Window),
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum Popup {
+    Volume,
+}
+
 pub struct Frame {
     pub ws: WindowStack,
     tx: Sender<AudioCommand>,
+    popup: Option<Popup>,
+    volume: f32,
 }
 
 fn new_ws_box() -> Box<WindowStack> {
@@ -129,7 +136,42 @@ impl Frame {
         let ws = WindowStack::Node(w);
         let (tx, rx) = mpsc::channel();
         audio_thread(rx);
-        Frame { ws, tx }
+        Frame {
+            ws,
+            tx,
+            popup: None,
+            volume: 1.0,
+        }
+    }
+
+    pub fn get_popup(&self) -> Option<&Popup> {
+        self.popup.as_ref()
+    }
+
+    pub fn get_volume(&self) -> f32 {
+        self.volume
+    }
+
+    pub fn lower_volume(&mut self) {
+        if self.get_popup() == Some(&Popup::Volume) && self.volume >= 0.01 {
+            self.volume -= 0.01;
+            self.tx.send(AudioCommand::SetVolume(self.volume));
+        }
+    }
+
+    pub fn raise_volume(&mut self) {
+        if self.get_popup() == Some(&Popup::Volume) && self.volume < 1.00 {
+            self.volume += 0.01;
+            self.tx.send(AudioCommand::SetVolume(self.volume));
+        }
+    }
+
+    pub fn toggle_volume_popup(&mut self) {
+        if self.popup.is_none() {
+            self.popup = Some(Popup::Volume)
+        } else {
+            self.popup = None
+        }
     }
 
     pub fn get_active_window(&mut self) -> &mut Window {
@@ -163,11 +205,6 @@ impl Frame {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum Popup {
-    Audio,
-}
-
 #[derive(Debug)]
 pub struct Window {
     x: u16,
@@ -177,7 +214,6 @@ pub struct Window {
     parent_w: u16,
     last_error: String,
     item: MenuItem,
-    popup: Option<Popup>,
     is_playing: bool,
     pub audio: Option<String>,
     pub is_active: bool,
@@ -199,7 +235,6 @@ impl Window {
             parent_w: 0,
             last_error: String::from(""),
             item: MenuItem::Rosary,
-            popup: None,
             is_active: false,
             is_playing: false,
             audio: None,
@@ -207,7 +242,6 @@ impl Window {
             prayersets,
         }
     }
-
     pub fn active_menu_item(&self) -> MenuItem {
         return self.item;
     }

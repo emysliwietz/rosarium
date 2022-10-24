@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fs;
 
 use crate::calender::get_daily_mystery_enum;
+use crate::prayer::Prayer;
 use tui::style::Color;
 
 use crate::config::{INITIUM_FILE, MYSTERY_DIR, PRAYER_DIR};
@@ -163,6 +164,12 @@ impl RosaryPrayer {
             ),
             _ => title,
         };
+    }
+}
+
+impl Prayer for RosaryPrayer {
+    fn get_file(&self) -> String {
+        return self.get_file();
     }
 }
 
