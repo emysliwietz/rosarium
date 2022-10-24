@@ -8,7 +8,7 @@ pub enum AudioCommand {
     Pause,
 }
 
-pub fn audio_thread(rx: Receiver<AudioCommand>) {
+pub fn audio_thread(mut rx: Receiver<AudioCommand>) {
     thread::Builder::new()
         .name("rosarium - audio".to_string())
         .spawn(move || {
@@ -17,25 +17,37 @@ pub fn audio_thread(rx: Receiver<AudioCommand>) {
             loop {
                 let cmd = rx.recv().expect("Garbled audio command");
                 match cmd {
-                    AudioCommand::Play(s) => {
-                        let mut wav = WavStream::default();
-                        wav.load(&Path::new(&s));
-                        let h = sl.play(&wav);
-                        while sl.voice_count() > 0 {
-                            let cmd = rx.recv().expect("Garbled audio command");
-                            if cmd == AudioCommand::Pause {
-                                fade_audio(&mut sl, h);
-                                break;
-                            }
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                        }
-                    }
-                    AudioCommand::Pause => {
-                        sl.set_pause_all(true);
-                    }
+                    AudioCommand::Play(s) => play_audio(&mut rx, &mut sl, s),
+                    AudioCommand::Pause => sl.set_pause_all(true),
                 }
             }
         });
+}
+
+pub fn play_audio(rx: &mut Receiver<AudioCommand>, sl: &mut Soloud, s: String) {
+    let mut wav = WavStream::default();
+    wav.load(&Path::new(&s));
+    let h = sl.play(&wav);
+    while sl.voice_count() > 0 {
+        let cmd = rx.recv().expect("Garbled audio command");
+        match cmd {
+            AudioCommand::Pause => {
+                fade_audio(sl, h);
+                break;
+            }
+            AudioCommand::Play(n) => {
+                return fade_to(s, n, rx, sl, h);
+            }
+        }
+    }
+}
+
+fn fade_to(old: String, new: String, rx: &mut Receiver<AudioCommand>, sl: &mut Soloud, h: Handle) {
+    if old == new {
+        return;
+    }
+    fade_audio(sl, h);
+    play_audio(rx, sl, new)
 }
 
 fn fade_audio(sl: &mut Soloud, h: Handle) {
