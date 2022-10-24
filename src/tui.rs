@@ -292,14 +292,17 @@ impl Window {
 
     pub fn cycle_language(&mut self) {
         match self.lang {
-            Language::ANGLIA => {
-                self.lang = Language::GERMANA;
-            }
             Language::GERMANA => {
                 self.lang = Language::LATINA;
             }
-            LATINA => {
+            Language::LATINA => {
                 self.lang = Language::ANGLIA;
+            }
+            Language::ANGLIA => {
+                self.lang = Language::SLAVONICA;
+            }
+            Language::SLAVONICA => {
+                self.lang = Language::GERMANA;
             }
             _ => {
                 self.lang = Language::GERMANA;

@@ -21,3 +21,5 @@ thiserror = "1.0"
 bdays = "0.1.2"
 soloud = "1.0.2"
 pprof = { version = "0.10", features = ["flamegraph"] }
+yaml-rust = "0.4"
+linked-hash-map = "0.5.6"

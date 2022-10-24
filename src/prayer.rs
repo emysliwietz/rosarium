@@ -117,6 +117,12 @@ impl FromStr for Box<dyn Prayer> {
     }
 }
 
+impl Clone for Box<dyn Prayer> {
+    fn clone(&self) -> Self {
+        Box::new(_Prayer::new(self.to_string()))
+    }
+}
+
 impl std::cmp::Eq for dyn Prayer {}
 
 /// A struct only used to construct generic Prayer type objects
@@ -131,7 +137,7 @@ impl Prayer for _Prayer {
 }
 
 impl _Prayer {
-    fn new(file: String) -> Self {
+    pub fn new(file: String) -> Self {
         _Prayer { file }
     }
 }
@@ -149,6 +155,7 @@ pub enum EveningPrayers {
     TropariaBeforeSleep,
     StMacariusTheGreat,
     StAntiochus,
+    TeLucisAnteTerminum,
 }
 
 impl Prayer for EveningPrayers {
@@ -159,6 +166,7 @@ impl Prayer for EveningPrayers {
             EveningPrayers::TropariaBeforeSleep => "jordanville/troparia_before_sleep",
             EveningPrayers::StMacariusTheGreat => "jordanville/st_macarius_the_great",
             EveningPrayers::StAntiochus => "jordanville/st_antiochus",
+            EveningPrayers::TeLucisAnteTerminum => "komplet/te_lucis_ante_terminum",
             _ => "",
         })
     }
@@ -183,7 +191,7 @@ impl EveningPrayer {
             curr_prayer: 0,
             prayers: vec![
                 //Box::new(RosaryPrayer::SignOfCross),
-                Box::new(EveningPrayers::OratioIesu),
+                Box::new(EveningPrayers::TeLucisAnteTerminum),
                 Box::new(EveningPrayers::PrayerBeforeSleep),
                 Box::new(EveningPrayers::TropariaBeforeSleep),
             ],

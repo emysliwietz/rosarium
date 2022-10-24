@@ -8,8 +8,8 @@ use crossterm::{
     terminal::enable_raw_mode,
 };
 
+use rosarium::config_parse;
 use rosarium::render::redraw;
-
 use rosarium::tui::{key_listen, Event, Frame, MenuItem};
 use tui::{backend::CrosstermBackend, Terminal};
 
@@ -57,7 +57,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
 
     redraw(&mut terminal, &mut frame)?;
-
     loop {
         let (f, q) = key_listen(&rx, &mut terminal, frame);
         frame = f;

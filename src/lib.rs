@@ -4,6 +4,7 @@ extern crate core;
 pub mod audio;
 pub mod calender;
 pub mod config;
+pub mod config_parse;
 pub mod events;
 pub mod language;
 pub mod prayer;
