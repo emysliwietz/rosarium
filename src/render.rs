@@ -1,3 +1,4 @@
+use crate::events::get_keybindings;
 use crate::language::{self, get_title_translation};
 
 use crate::rosary::get_daily_mystery;
@@ -123,10 +124,29 @@ pub fn render_mysteries<'a>() -> Paragraph<'a> {
 
 pub fn render_volume<'a>(frame: &mut Frame) -> Gauge<'a> {
     Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("Volume"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Volume")
+                .border_type(BorderType::Rounded),
+        )
         .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
         .use_unicode(true)
         .ratio(frame.get_volume() as f64)
+}
+
+pub fn render_keybindings<'a>(frame: &mut Frame) -> Paragraph<'a> {
+    Paragraph::new(get_keybindings(frame))
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: false })
+        .scroll(frame.get_active_window().get_offset())
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .title("Keybindings")
+                .border_type(BorderType::Rounded),
+        )
 }
 
 pub fn draw_rosary(
@@ -180,7 +200,18 @@ pub fn draw_frame_popup(
     }
     match frame.get_popup().unwrap() {
         &Popup::Volume => draw_volume_popup(frame, rect, chunk),
+        &Popup::KeyBindings => draw_keybinding_popup(frame, rect, chunk),
     }
+}
+
+pub fn draw_keybinding_popup(
+    frame: &mut Frame,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
+) {
+    let popup_chunk = centered_rect(80, 60, 10, chunk);
+    rect.render_widget(Clear, popup_chunk);
+    rect.render_widget(render_keybindings(frame), popup_chunk);
 }
 
 pub fn draw_volume_popup(

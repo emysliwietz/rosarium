@@ -58,6 +58,7 @@ pub enum WindowStack {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Popup {
     Volume,
+    KeyBindings,
 }
 
 pub struct Frame {
@@ -152,26 +153,38 @@ impl Frame {
         self.volume
     }
 
-    pub fn lower_volume(&mut self) {
-        if self.get_popup() == Some(&Popup::Volume) && self.volume >= 0.01 {
+    pub fn lower_volume(&mut self) -> bool {
+        let is_popup = self.get_popup() == Some(&Popup::Volume);
+        if is_popup && self.volume >= 0.01 {
             self.volume -= 0.01;
             self.tx.send(AudioCommand::SetVolume(self.volume));
         }
+        is_popup
     }
 
-    pub fn raise_volume(&mut self) {
-        if self.get_popup() == Some(&Popup::Volume) && self.volume < 1.00 {
+    pub fn raise_volume(&mut self) -> bool {
+        let is_popup = self.get_popup() == Some(&Popup::Volume);
+        if is_popup && self.volume < 1.00 {
             self.volume += 0.01;
             self.tx.send(AudioCommand::SetVolume(self.volume));
+        }
+        is_popup
+    }
+
+    fn toggle_popup(&mut self, p: Popup) {
+        if self.popup.is_none() {
+            self.popup = Some(p)
+        } else {
+            self.popup = None
         }
     }
 
     pub fn toggle_volume_popup(&mut self) {
-        if self.popup.is_none() {
-            self.popup = Some(Popup::Volume)
-        } else {
-            self.popup = None
-        }
+        self.toggle_popup(Popup::Volume)
+    }
+
+    pub fn toggle_keybinding_popup(&mut self) {
+        self.toggle_popup(Popup::KeyBindings)
     }
 
     pub fn get_active_window(&mut self) -> &mut Window {

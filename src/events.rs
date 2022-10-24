@@ -9,6 +9,34 @@ use std::io::Stdout;
 use std::sync::mpsc::Receiver;
 use tui::{backend::CrosstermBackend, Terminal};
 
+pub fn get_keybindings(f: &Frame) -> String {
+    let mut keybinds = String::from(
+        "?: Toggle Keybindings
+r: Refresh window
+q: Quit
+
+j: Scroll up
+k: Scroll down
+
+x: Cycle language
+
+p: Play/Pause audio (if available for current window)
+v: Toggle Volume Popup
+h: Lower Volume (when volume popup active)
+l: Raise Volume (when volume popup active)
+
+H: Split window horizontal
+L: Split window vertical
+",
+    );
+    keybinds += match f.get_active_window_ro().active_menu_item() {
+        MenuItem::Rosary => "Space/l/Right: Advance Rosary\nBackspace/h/Left: Recede Rosary",
+        MenuItem::PrayerSet(_) => "Space/l/Right: Advance Prayer\nBackspace/h/Left: Recede Prayer",
+        _ => "",
+    };
+    keybinds
+}
+
 pub fn general_input_handler<'a>(
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     mut frame: Frame,
@@ -35,8 +63,17 @@ pub fn general_input_handler<'a>(
         KeyCode::Char('j') => frame.get_active_window().up(),
         KeyCode::Char('x') => frame.get_active_window().cycle_language(),
         KeyCode::Char('v') => frame.toggle_volume_popup(),
-        KeyCode::Char('h') => frame.lower_volume(),
-        KeyCode::Char('l') => frame.raise_volume(),
+        KeyCode::Char('?') => frame.toggle_keybinding_popup(),
+        KeyCode::Char('h') => {
+            if !frame.lower_volume() {
+                return (frame, None);
+            }
+        }
+        KeyCode::Char('l') => {
+            if !frame.raise_volume() {
+                return (frame, None);
+            }
+        }
         KeyCode::Char('H') => frame = frame.hsplit(),
         KeyCode::Char('L') => frame = frame.vsplit(),
         KeyCode::Char('p') => {
