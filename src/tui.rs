@@ -1,11 +1,9 @@
 use crate::audio::{audio_thread, AudioCommand};
-use crate::events::general_input_handler;
-use crate::prayer::EveningPrayer;
+use crate::config_parse::get_all_prayset_titles;
+use crate::events::{general_input_handler, prayer_set_input_handler};
+use crate::prayer::PrayerSet;
 use crate::rosary::Rosary;
-use crate::{
-    events::{evening_prayer_input_handler, rosary_input_handler},
-    language::Language,
-};
+use crate::{events::rosary_input_handler, language::Language};
 use crossterm::event::KeyEvent;
 use soloud::{AudioExt, LoadExt, Soloud, Speech, Wav, WavStream};
 
@@ -24,7 +22,7 @@ use crate::render::redraw;
 pub enum MenuItem {
     _NOQUIT,
     Rosary,
-    EveningPrayer,
+    PrayerSet(usize),
     Settings,
     Quit,
 }
@@ -38,7 +36,7 @@ impl From<MenuItem> for usize {
             MenuItem::Quit => 0,
             MenuItem::Rosary => 1,
             MenuItem::Settings => 2,
-            MenuItem::EveningPrayer => 3,
+            MenuItem::PrayerSet(i) => 3 + i,
         }
     }
 }
@@ -185,11 +183,15 @@ pub struct Window {
     pub audio: Option<String>,
     pub is_active: bool,
     pub rosary: Rosary,
-    pub evening_prayer: EveningPrayer,
+    pub prayersets: Vec<PrayerSet>,
 }
 
 impl Window {
     pub fn new() -> Window {
+        let mut prayersets = vec![];
+        for (title, yaml) in get_all_prayset_titles() {
+            prayersets.push(PrayerSet::new(title, yaml))
+        }
         Window {
             x: 0,
             y: 0,
@@ -203,7 +205,7 @@ impl Window {
             is_playing: false,
             audio: None,
             rosary: Rosary::new(),
-            evening_prayer: EveningPrayer::new(),
+            prayersets,
         }
     }
 
@@ -315,11 +317,36 @@ impl Window {
     }
 
     pub fn cycle_item(&mut self) {
+        let num_prayer_sets = self.prayersets.len();
         self.item = match self.item {
-            MenuItem::Rosary => MenuItem::EveningPrayer,
-            MenuItem::EveningPrayer => MenuItem::Rosary,
+            MenuItem::Rosary => {
+                if num_prayer_sets > 0 {
+                    MenuItem::PrayerSet(0)
+                } else {
+                    MenuItem::Rosary
+                }
+            }
+            MenuItem::PrayerSet(i) => {
+                if i < num_prayer_sets - 1 {
+                    MenuItem::PrayerSet(i + 1)
+                } else {
+                    MenuItem::Rosary
+                }
+            }
             _ => self.item,
         }
+    }
+
+    pub fn get_curr_prayer_set_index(&self) -> Option<usize> {
+        match self.item {
+            MenuItem::PrayerSet(i) => Some(i),
+            _ => None,
+        }
+    }
+
+    pub fn get_curr_prayer_set(&mut self) -> &mut PrayerSet {
+        let i = self.get_curr_prayer_set_index().unwrap_or(0);
+        self.prayersets.get_mut(i).expect("No prayer sets")
     }
 }
 
@@ -360,8 +387,8 @@ pub fn input_handler<'a>(
                         let rih = rosary_input_handler(terminal, &mut frame, &event);
                         (frame, rih)
                     }
-                    MenuItem::EveningPrayer => {
-                        let epih = evening_prayer_input_handler(terminal, &mut frame, &event);
+                    MenuItem::PrayerSet(_) => {
+                        let epih = prayer_set_input_handler(terminal, &mut frame, &event);
                         (frame, epih)
                     }
                     _ => (frame, Ok(ami)),

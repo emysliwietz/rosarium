@@ -1,4 +1,4 @@
-use crate::language::get_title_translation;
+use crate::language::{self, get_title_translation};
 
 use crate::rosary::get_daily_mystery;
 use crate::tui::{Frame, MenuItem, Window, WindowStack};
@@ -12,11 +12,13 @@ use tui::text::Text;
 use tui::widgets::{Block, BorderType, Borders, Paragraph, Wrap};
 use tui::Terminal;
 
-pub fn render_evening_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
-    let prayer = window.evening_prayer.to_prayer();
-    let (title, text, audio) = prayer.title_text_audio(window);
+pub fn render_prayer_set<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
+    let language = window.get_language().clone();
+    let prayer_set = window.get_curr_prayer_set();
+    let prayer = prayer_set.to_prayer();
+    let (title, text, audio) = prayer.title_text_audio(&language);
+    let prayer_render = cursive_p(text, prayer_set.get_title(&language), title, window);
     window.audio = audio;
-    let prayer_render = cursive_p(text, "evening_prayer", title, window);
     Ok(prayer_render)
 }
 
@@ -145,12 +147,12 @@ pub fn draw_rosary(
     Ok(())
 }
 
-pub fn draw_evening_prayer(
+pub fn draw_prayer_set(
     window: &mut Window,
     rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
-    let prayer_window = render_evening_prayer(window);
+    let prayer_window = render_prayer_set(window);
     if prayer_window.is_err() {
         window.set_error(prayer_window.as_ref().err().as_ref().unwrap().to_string());
     }
@@ -229,7 +231,7 @@ fn redraw_window(
         }
         MenuItem::Quit => Ok(()),
         MenuItem::_NOQUIT => Ok(()),
-        MenuItem::EveningPrayer => draw_evening_prayer(window, rect, chunk),
+        MenuItem::PrayerSet(_) => draw_prayer_set(window, rect, chunk),
     };
     Ok(())
 }

@@ -1,3 +1,4 @@
+use crate::config_parse::get_order;
 use crate::rosary::RosaryPrayer;
 use crate::{
     config::PRAYER_DIR,
@@ -10,25 +11,22 @@ use soloud::{audio, AudioExt, LoadExt, Wav, WavStream};
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
+use yaml_rust::Yaml;
 
 pub trait Prayer {
     fn get_file(&self) -> String;
 
-    fn load_audio(&self, window: &mut Window) -> Option<String> {
-        let audio_file = PRAYER_DIR.to_owned()
-            + "/"
-            + &window.language()
-            + "/cantus/"
-            + &self.get_file()
-            + ".wav";
+    fn load_audio(&self, lan: &Language) -> Option<String> {
+        let audio_file =
+            PRAYER_DIR.to_owned() + "/" + &lan.to_string() + "/cantus/" + &self.get_file() + ".wav";
         if Path::new(&audio_file).exists() {
             Some(audio_file)
         } else {
-            self.load_fallback_prayer_audio(window)
+            self.load_fallback_prayer_audio(lan)
         }
     }
 
-    fn load_fallback_prayer_audio(&self, window: &mut Window) -> Option<String> {
+    fn load_fallback_prayer_audio(&self, lan: &Language) -> Option<String> {
         for lan in Language::VALUES.iter() {
             let audio_file = PRAYER_DIR.to_owned()
                 + "/"
@@ -59,11 +57,11 @@ pub trait Prayer {
         get_title_translation(&self.get_file(), lan)
     }
 
-    fn get_prayer_text_title(&self, window: &mut Window) -> (String, String) {
-        let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
+    fn get_prayer_text_title(&self, lan: &Language) -> (String, String) {
+        let file = PRAYER_DIR.to_owned() + "/" + &lan.to_string() + "/" + &self.get_file();
         let text = fs::read_to_string(&file);
         if text.is_ok() {
-            (text.unwrap(), self.get_prayer_title(&window.get_language()))
+            (text.unwrap(), self.get_prayer_title(lan))
         } else {
             let (text, lan) = self.get_fallback_prayer_text();
             (text, self.get_prayer_title(lan))
@@ -89,9 +87,9 @@ pub trait Prayer {
         );
     }
 
-    fn title_text_audio(&self, window: &mut Window) -> (String, String, Option<String>) {
-        let audio = self.load_audio(window);
-        let (text, title) = self.get_prayer_text_title(window);
+    fn title_text_audio(&self, lan: &Language) -> (String, String, Option<String>) {
+        let audio = self.load_audio(lan);
+        let (text, title) = self.get_prayer_text_title(lan);
         (title, text, audio)
     }
 }
@@ -121,6 +119,12 @@ impl FromStr for Box<dyn Prayer> {
     }
 }
 
+impl Default for Box<dyn Prayer> {
+    fn default() -> Self {
+        Box::new(_Prayer::new("no prayers specified in config".to_string()))
+    }
+}
+
 impl Clone for Box<dyn Prayer> {
     fn clone(&self) -> Self {
         Box::new(_Prayer::new(self.to_string()))
@@ -146,76 +150,38 @@ impl _Prayer {
     }
 }
 
-/// Convert reference to Prayer type object to owned Prayer via cloning
-pub fn to_owned(b: &Box<dyn Prayer>) -> Box<dyn Prayer> {
-    Box::new(_Prayer::new(b.get_file()))
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum EveningPrayers {
-    None,
-    OratioIesu,
-    PrayerBeforeSleep,
-    TropariaBeforeSleep,
-    StMacariusTheGreat,
-    StAntiochus,
-    TeLucisAnteTerminum,
-}
-
-impl Prayer for EveningPrayers {
-    fn get_file(&self) -> String {
-        String::from(match self {
-            EveningPrayers::OratioIesu => "oratio_Iesu",
-            EveningPrayers::PrayerBeforeSleep => "jordanville/prayer_before_sleep",
-            EveningPrayers::TropariaBeforeSleep => "jordanville/troparia_before_sleep",
-            EveningPrayers::StMacariusTheGreat => "jordanville/st_macarius_the_great",
-            EveningPrayers::StAntiochus => "jordanville/st_antiochus",
-            EveningPrayers::TeLucisAnteTerminum => "komplet/te_lucis_ante_terminum",
-            _ => "",
-        })
-    }
-}
-
 #[derive(Debug, Eq, PartialEq)]
-pub struct EveningPrayer {
+pub struct PrayerSet {
+    title: String,
     /// Number of current prayer
     curr_prayer: u8,
     prayers: Vec<Box<dyn Prayer>>,
 }
 
-impl EveningPrayer {
-    pub fn new() -> EveningPrayer {
-        let final_prayers = vec![
-            EveningPrayers::StMacariusTheGreat,
-            EveningPrayers::StAntiochus,
-            EveningPrayers::OratioIesu,
-        ];
-
-        let mut ep = EveningPrayer {
+impl PrayerSet {
+    pub fn new(title: String, y: Yaml) -> PrayerSet {
+        PrayerSet {
+            title,
             curr_prayer: 0,
-            prayers: vec![
-                //Box::new(RosaryPrayer::SignOfCross),
-                Box::new(EveningPrayers::TeLucisAnteTerminum),
-                Box::new(EveningPrayers::PrayerBeforeSleep),
-                Box::new(EveningPrayers::TropariaBeforeSleep),
-            ],
-        };
-        let today = chrono::offset::Local::now()
-            .date()
-            .naive_local()
-            .num_days_from_ce() as u64;
-        let mut rng = StdRng::seed_from_u64(today);
-        ep.prayers
-            .push(Box::new(final_prayers.choose(&mut rng).unwrap().clone()));
-        ep
+            prayers: get_order(&y),
+        }
+    }
+
+    pub fn get_title(&self, lan: &Language) -> String {
+        get_title_translation(&self.title, lan)
     }
 
     pub fn to_prayer(&self) -> Box<dyn Prayer> {
-        to_owned(self.prayers.get(self.curr_prayer as usize).unwrap())
+        let o = self.prayers.get(self.curr_prayer as usize);
+        if o.is_some() {
+            o.unwrap().clone()
+        } else {
+            Box::default()
+        }
     }
 
     pub fn advance(&mut self) {
-        if (self.curr_prayer as usize) < self.prayers.len() - 1 {
+        if self.prayers.len() > 0 && (self.curr_prayer as usize) < self.prayers.len() - 1 {
             self.curr_prayer += 1
         }
     }

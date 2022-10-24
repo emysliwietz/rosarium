@@ -2,8 +2,8 @@
 #
 # Each page, seperated by '---' represents one tab of Rosarium
 # Each page has a title, specifying the to-be-localized title of the window
-# A list of prayer groups is specified
-# which lists groups of prayers at single depth
+# A list of prayer groups is optionally specified
+# It sorts prayers into groups, which can be used in the order
 # Finally, an order is specified
 # It lists prayers in the order they should be prayed
 # Groups can be used instead of filenames
@@ -11,16 +11,19 @@
 title: "evening_prayer"
 prayers:
   closing:
-    - "st_antiochus"
-    - "st_marcarius_the_great"
+    - "jordanville/st_antiochus"
+    - "jordanville/st_marcarius_the_great"
     - "oratio_Iesu"
 order:
-  - "te_lucis_ante_terminum"
-  - "prayer_before_sleep"
-  - "troparia_before_sleep"
+  - "komplet/te_lucis_ante_terminum"
+  - "jordanville/prayer_before_sleep"
+  - "jordanville/troparia_before_sleep"
   - closing:
       count: 1 # TODO: Count ranges like 0-4
       random: true
 ---
+title: "oratio_Iesu"
+order:
+  - "oratio_Iesu"
 ---
 ---

@@ -10,19 +10,15 @@ use crate::prayer::{Prayer, _Prayer};
 const E: &str = "Malformed YAML";
 type PrayerList = Vec<Box<dyn Prayer>>;
 
-pub fn load() {
+/// Return a list of all prayer set titles and corresponding YAML
+pub fn get_all_prayset_titles() -> Vec<(String, Yaml)> {
     let s = read_to_string("preces/.config.yaml").unwrap();
-    let docs: Vec<Yaml> = YamlLoader::load_from_str(&s).unwrap();
-    println!("{:?}", get_order(&docs[0]));
-}
-
-/// Return a list of all prayer set titiles
-pub fn get_all_prayset_titles(y: &Vec<Yaml>) -> Vec<String> {
-    let mut titles: Vec<String> = vec![];
+    let y: Vec<Yaml> = YamlLoader::load_from_str(&s).unwrap();
+    let mut titles: Vec<(String, Yaml)> = vec![];
     for i in 0..y.len() {
         let title = y[i]["title"].as_str();
         if title.is_some() {
-            titles.push(String::from(title.unwrap()));
+            titles.push((String::from(title.unwrap()), y[i].clone()));
         }
     }
     return titles;

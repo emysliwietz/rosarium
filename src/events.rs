@@ -72,7 +72,7 @@ pub fn rosary_input_handler<'a>(
     Ok(frame.get_active_window().active_menu_item())
 }
 
-pub fn evening_prayer_input_handler<'a>(
+pub fn prayer_set_input_handler<'a>(
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     frame: &'a mut Frame,
     event: &KeyEvent,
@@ -83,12 +83,12 @@ pub fn evening_prayer_input_handler<'a>(
             terminal.show_cursor()?;
             return Ok(MenuItem::Quit);
         }
-        KeyCode::Char(' ') => frame.get_active_window().evening_prayer.advance(),
-        KeyCode::Char('l') => frame.get_active_window().evening_prayer.advance(),
-        KeyCode::Char('h') => frame.get_active_window().evening_prayer.recede(),
-        KeyCode::Left => frame.get_active_window().evening_prayer.recede(),
-        KeyCode::Right => frame.get_active_window().evening_prayer.advance(),
-        KeyCode::Backspace => frame.get_active_window().evening_prayer.recede(),
+        KeyCode::Char(' ') => frame.get_active_window().get_curr_prayer_set().advance(),
+        KeyCode::Char('l') => frame.get_active_window().get_curr_prayer_set().advance(),
+        KeyCode::Char('h') => frame.get_active_window().get_curr_prayer_set().recede(),
+        KeyCode::Left => frame.get_active_window().get_curr_prayer_set().recede(),
+        KeyCode::Right => frame.get_active_window().get_curr_prayer_set().advance(),
+        KeyCode::Backspace => frame.get_active_window().get_curr_prayer_set().recede(),
         _ => {}
     }
     redraw(terminal, frame)?;

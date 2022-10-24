@@ -36,7 +36,7 @@ pub fn title_from_s<'a>(t: String, w: &Window) -> Text<'a> {
 
 pub fn cursive_p<'a>(
     text: String,
-    border_title: &str,
+    border_title: String,
     title: String,
     w: &mut Window,
 ) -> Paragraph<'a> {
@@ -67,7 +67,7 @@ pub fn hcenter(text: &String, window: &Window) -> String {
 pub fn combine_to_p<'a>(
     text: Text<'a>,
     mut title: Text<'a>,
-    border_title: &str,
+    border_title: String,
     w: &mut Window,
 ) -> Paragraph<'a> {
     let p = Text::raw("\n".repeat(w.get_top_offset(text.height() + 4)));
@@ -80,7 +80,7 @@ pub fn combine_to_p<'a>(
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
-                .title(get_title_translation(border_title, w.get_language()))
+                .title(border_title)
                 .border_type(tui::widgets::BorderType::Rounded),
         )
 }
