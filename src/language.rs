@@ -66,8 +66,8 @@ pub fn ordinal_n_gen(i: u8) -> &'static str {
     }
 }
 
-pub fn get_title_translation(lookup: &str, window: &Window) -> String {
-    let filename = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + TITLE_FILE;
+pub fn get_title_translation(lookup: &str, lan: &Language) -> String {
+    let filename = PRAYER_DIR.to_owned() + "/" + &lan.to_string() + "/" + TITLE_FILE;
     // Open the file in read-only mode (ignoring errors).
     let file = File::open(&filename);
     if file.is_err() {

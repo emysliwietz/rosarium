@@ -61,7 +61,7 @@ pub fn render_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn E
                         .fg(Color::White)
                         .remove_modifier(Modifier::ITALIC),
                 )
-                .title(get_title_translation("rosarium", window))
+                .title(get_title_translation("rosarium", window.get_language()))
                 .border_type(BorderType::Rounded),
         );
     Ok(if rosary_prayer.is_mystery() {

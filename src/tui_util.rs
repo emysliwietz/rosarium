@@ -14,7 +14,7 @@ pub fn paragraph<'a>(text: String, title: &str, w: &mut Window) -> Paragraph<'a>
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
-                .title(get_title_translation(title, w))
+                .title(get_title_translation(title, w.get_language()))
                 .border_type(tui::widgets::BorderType::Rounded),
         )
 }
@@ -80,7 +80,7 @@ pub fn combine_to_p<'a>(
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
-                .title(get_title_translation(border_title, w))
+                .title(get_title_translation(border_title, w.get_language()))
                 .border_type(tui::widgets::BorderType::Rounded),
         )
 }

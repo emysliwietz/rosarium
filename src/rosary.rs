@@ -119,7 +119,7 @@ impl RosaryPrayer {
     }
 
     pub fn get_prayer_title(&self, window: &mut Window) -> String {
-        let title = get_title_translation(&self.get_file(), window);
+        let title = get_title_translation(&self.get_file(), window.get_language());
         return match self {
             FirstMystery => format!(
                 "{} Mysterium nuntiatur:\n{}",
@@ -146,12 +146,20 @@ impl RosaryPrayer {
                 ordinal_n_acc_upper(5),
                 title.trim()
             ),
-            HailMaryFaith => format!("{} {}", title, get_title_translation("pro_fide", window)),
-            HailMaryHope => format!("{} {}", title, get_title_translation("pro_spe", window)),
+            HailMaryFaith => format!(
+                "{} {}",
+                title,
+                get_title_translation("pro_fide", window.get_language())
+            ),
+            HailMaryHope => format!(
+                "{} {}",
+                title,
+                get_title_translation("pro_spe", window.get_language())
+            ),
             HailMaryCharity => format!(
                 "{} {}",
                 title,
-                get_title_translation("pro_caritate", window)
+                get_title_translation("pro_caritate", window.get_language())
             ),
             _ => title,
         };

@@ -13,9 +13,6 @@ use std::str::FromStr;
 
 pub trait Prayer {
     fn get_file(&self) -> String;
-    fn get_prayer_title(&self, window: &Window) -> String {
-        get_title_translation(&self.get_file(), window)
-    }
 
     fn load_audio(&self, window: &mut Window) -> Option<String> {
         let audio_file = PRAYER_DIR.to_owned()
@@ -58,9 +55,19 @@ pub trait Prayer {
         return languages;
     }
 
-    fn get_prayer_text(&self, window: &mut Window) -> String {
+    fn get_prayer_title(&self, lan: &Language) -> String {
+        get_title_translation(&self.get_file(), lan)
+    }
+
+    fn get_prayer_text_title(&self, window: &mut Window) -> (String, String) {
         let file = PRAYER_DIR.to_owned() + "/" + &window.language() + "/" + &self.get_file();
-        fs::read_to_string(&file).unwrap_or(self.get_fallback_prayer_text(window))
+        let text = fs::read_to_string(&file);
+        if text.is_ok() {
+            (text.unwrap(), self.get_prayer_title(&window.get_language()))
+        } else {
+            let (text, lan) = self.get_fallback_prayer_text();
+            (text, self.get_prayer_title(lan))
+        }
     }
 
     fn get_prayer_text_for_language(&self, lang: &Language) -> String {
@@ -68,27 +75,24 @@ pub trait Prayer {
         fs::read_to_string(&file).unwrap_or(format!("{} not found", lang.to_string()))
     }
 
-    fn title_text_audio(&self, window: &mut Window) -> (String, String, Option<String>) {
-        let audio = self.load_audio(window);
-        let text = if audio.is_none() {
-            self.get_prayer_text(window)
-        } else {
-            self.get_prayer_text_for_language(window.get_language())
-        };
-        let title = self.get_prayer_title(window);
-        (title, text, audio)
-    }
-
-    fn get_fallback_prayer_text(&self, window: &mut Window) -> String {
+    fn get_fallback_prayer_text(&self) -> (String, &Language) {
         for lan in Language::VALUES.iter() {
             let file = PRAYER_DIR.to_owned() + "/" + &lan.to_string() + "/" + &self.get_file();
             let prayer_text = fs::read_to_string(&file);
             if prayer_text.is_ok() {
-                window.set_language(lan);
-                return prayer_text.unwrap();
+                return (prayer_text.unwrap(), &lan);
             }
         }
-        format!("Unable find prayer at {}", &self.get_file())
+        return (
+            format!("Unable find prayer at {}", &self.get_file()),
+            &Language::ANGLIA,
+        );
+    }
+
+    fn title_text_audio(&self, window: &mut Window) -> (String, String, Option<String>) {
+        let audio = self.load_audio(window);
+        let (text, title) = self.get_prayer_text_title(window);
+        (title, text, audio)
     }
 }
 
