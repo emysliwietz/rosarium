@@ -43,11 +43,10 @@ pub fn play_audio(rx: &mut Receiver<AudioCommand>, sl: &mut Soloud, s: String) {
 }
 
 fn fade_to(old: String, new: String, rx: &mut Receiver<AudioCommand>, sl: &mut Soloud, h: Handle) {
-    if old == new {
-        return;
-    }
     fade_audio(sl, h);
-    play_audio(rx, sl, new)
+    if old != new {
+        play_audio(rx, sl, new)
+    }
 }
 
 fn fade_audio(sl: &mut Soloud, h: Handle) {
