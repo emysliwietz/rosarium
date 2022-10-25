@@ -159,11 +159,11 @@ pub struct PrayerSet {
 }
 
 impl PrayerSet {
-    pub fn new(title: String, y: Yaml) -> PrayerSet {
+    pub fn new(title: String, y: Yaml, rng: &mut StdRng) -> PrayerSet {
         PrayerSet {
             title,
             curr_prayer: 0,
-            prayers: get_order(&y),
+            prayers: get_order(rng, &y),
         }
     }
 

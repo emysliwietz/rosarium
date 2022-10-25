@@ -4,7 +4,10 @@ use crate::events::{general_input_handler, prayer_set_input_handler, volume_inpu
 use crate::prayer::PrayerSet;
 use crate::rosary::Rosary;
 use crate::{events::rosary_input_handler, language::Language};
+use chrono::Datelike;
 use crossterm::event::KeyEvent;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use soloud::{AudioExt, LoadExt, Soloud, Speech, Wav, WavStream};
 
 use std::borrow::Borrow;
@@ -233,13 +236,20 @@ pub struct Window {
     pub is_active: bool,
     pub rosary: Rosary,
     pub prayersets: Vec<PrayerSet>,
+    rng: StdRng,
 }
 
 impl Window {
     pub fn new() -> Window {
+        let today = chrono::offset::Local::now()
+            .date()
+            .naive_local()
+            .num_days_from_ce() as u64;
+        let mut rng = StdRng::seed_from_u64(today);
+
         let mut prayersets = vec![];
         for (title, yaml) in get_all_prayset_titles() {
-            prayersets.push(PrayerSet::new(title, yaml))
+            prayersets.push(PrayerSet::new(title, yaml, &mut rng))
         }
         Window {
             x: 0,
@@ -254,6 +264,7 @@ impl Window {
             audio: None,
             rosary: Rosary::new(),
             prayersets,
+            rng,
         }
     }
     pub fn active_menu_item(&self) -> MenuItem {

@@ -41,7 +41,7 @@ pub fn get_yaml_for_title<'a>(title: &str, y: &'a Vec<Yaml>) -> Option<&'a Yaml>
 }
 
 /// Return a list of prayers as defined in "order"
-pub fn get_order(y: &Yaml) -> PrayerList {
+pub fn get_order(rng: &mut StdRng, y: &Yaml) -> PrayerList {
     let mut order: PrayerList = vec![];
     let o = &y["order"].as_vec();
     if o.is_none() {
@@ -55,19 +55,23 @@ pub fn get_order(y: &Yaml) -> PrayerList {
         } else {
             let prayer = o[p].as_hash().expect(E);
             //println!("Group: {:?}", prayer);
-            order.append(&mut process_group(y, prayer));
+            order.append(&mut process_group(rng, y, prayer));
         }
     }
     order
 }
 
 /// Process a prayer group definition in "order"
-pub fn process_group(y: &Yaml, g: &LinkedHashMap<Yaml, Yaml>) -> PrayerList {
+pub fn process_group(rng: &mut StdRng, y: &Yaml, g: &LinkedHashMap<Yaml, Yaml>) -> PrayerList {
     let mut order: PrayerList = vec![];
     for (var_name, properties) in g.iter() {
         let var_name = var_name.as_str().expect(E);
         let group_prayers = expand_group_definition(y, var_name);
-        order.append(&mut pick_and_apply_properties(&group_prayers, &properties));
+        order.append(&mut pick_and_apply_properties(
+            rng,
+            &group_prayers,
+            &properties,
+        ));
     }
     order
 }
@@ -125,15 +129,13 @@ fn get_properties(group: &PrayerList, properties: &Yaml) -> Properties {
     }
 }
 
-pub fn pick_and_apply_properties<'a>(group: &PrayerList, properties: &Yaml) -> PrayerList {
+pub fn pick_and_apply_properties<'a>(
+    rng: &mut StdRng,
+    group: &PrayerList,
+    properties: &Yaml,
+) -> PrayerList {
     let mut order: PrayerList = vec![];
     let p = get_properties(group, properties);
-
-    let today = chrono::offset::Local::now()
-        .date()
-        .naive_local()
-        .num_days_from_ce() as u64;
-    let mut rng = StdRng::seed_from_u64(today);
 
     if !rng.gen_bool(p.chance as f64 / 100.0) {
         return order;
@@ -143,7 +145,7 @@ pub fn pick_and_apply_properties<'a>(group: &PrayerList, properties: &Yaml) -> P
 
     for i in 0..count {
         order.push(if p.random {
-            group.choose(&mut rng).expect(E).clone()
+            group.choose(rng).expect(E).clone()
         } else {
             group[i & group.len()].clone()
         })
