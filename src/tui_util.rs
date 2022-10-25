@@ -75,7 +75,7 @@ pub fn combine_to_p<'a>(
     title.extend(p);
     title.extend(text);
     Paragraph::new(title)
-        .alignment(tui::layout::Alignment::Center)
+        .alignment(tui::layout::Alignment::Left)
         .wrap(Wrap { trim: false })
         .scroll(w.get_offset())
         .block(

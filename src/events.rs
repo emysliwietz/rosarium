@@ -64,16 +64,6 @@ pub fn general_input_handler<'a>(
         KeyCode::Char('x') => frame.get_active_window().cycle_language(),
         KeyCode::Char('v') => frame.toggle_volume_popup(),
         KeyCode::Char('?') => frame.toggle_keybinding_popup(),
-        KeyCode::Char('h') => {
-            if !frame.lower_volume() {
-                return (frame, None);
-            }
-        }
-        KeyCode::Char('l') => {
-            if !frame.raise_volume() {
-                return (frame, None);
-            }
-        }
         KeyCode::Char('H') => frame = frame.hsplit(),
         KeyCode::Char('L') => frame = frame.vsplit(),
         KeyCode::Char('p') => {
@@ -89,17 +79,36 @@ pub fn general_input_handler<'a>(
     (frame, Some(active_menu_item))
 }
 
+pub fn volume_input_handler<'a>(
+    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+    frame: &'a mut Frame,
+    event: &KeyEvent,
+) -> Result<Option<MenuItem>, Box<dyn Error>> {
+    match event.code {
+        KeyCode::Char('h') => frame.lower_volume(),
+        KeyCode::Char('l') => frame.raise_volume(),
+        KeyCode::Char('1') => frame.set_volume(10),
+        KeyCode::Char('2') => frame.set_volume(20),
+        KeyCode::Char('3') => frame.set_volume(30),
+        KeyCode::Char('4') => frame.set_volume(40),
+        KeyCode::Char('5') => frame.set_volume(50),
+        KeyCode::Char('6') => frame.set_volume(60),
+        KeyCode::Char('7') => frame.set_volume(70),
+        KeyCode::Char('8') => frame.set_volume(80),
+        KeyCode::Char('9') => frame.set_volume(90),
+        KeyCode::Char('0') => frame.set_volume(100),
+        _ => {}
+    }
+    redraw(terminal, frame)?;
+    Ok(Some(frame.get_active_window_ro().active_menu_item()))
+}
+
 pub fn rosary_input_handler<'a>(
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     frame: &'a mut Frame,
     event: &KeyEvent,
 ) -> Result<MenuItem, Box<dyn Error>> {
     match event.code {
-        KeyCode::Char('q') => {
-            disable_raw_mode()?;
-            terminal.show_cursor()?;
-            return Ok(MenuItem::Quit);
-        }
         KeyCode::Char(' ') => frame.get_active_window().rosary.advance(),
         KeyCode::Char('l') => frame.get_active_window().rosary.advance(),
         KeyCode::Char('h') => frame.get_active_window().rosary.recede(),
@@ -118,11 +127,6 @@ pub fn prayer_set_input_handler<'a>(
     event: &KeyEvent,
 ) -> Result<MenuItem, Box<dyn Error>> {
     match event.code {
-        KeyCode::Char('q') => {
-            disable_raw_mode()?;
-            terminal.show_cursor()?;
-            return Ok(MenuItem::Quit);
-        }
         KeyCode::Char(' ') => frame.get_active_window().get_curr_prayer_set().advance(),
         KeyCode::Char('l') => frame.get_active_window().get_curr_prayer_set().advance(),
         KeyCode::Char('h') => frame.get_active_window().get_curr_prayer_set().recede(),

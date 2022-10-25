@@ -1,6 +1,6 @@
 use crate::audio::{audio_thread, AudioCommand};
 use crate::config_parse::get_all_prayset_titles;
-use crate::events::{general_input_handler, prayer_set_input_handler};
+use crate::events::{general_input_handler, prayer_set_input_handler, volume_input_handler};
 use crate::prayer::PrayerSet;
 use crate::rosary::Rosary;
 use crate::{events::rosary_input_handler, language::Language};
@@ -153,22 +153,23 @@ impl Frame {
         self.volume
     }
 
-    pub fn lower_volume(&mut self) -> bool {
-        let is_popup = self.get_popup() == Some(&Popup::Volume);
-        if is_popup && self.volume >= 0.01 {
+    pub fn lower_volume(&mut self) {
+        if self.volume >= 0.01 {
             self.volume -= 0.01;
             self.tx.send(AudioCommand::SetVolume(self.volume));
         }
-        is_popup
     }
 
-    pub fn raise_volume(&mut self) -> bool {
-        let is_popup = self.get_popup() == Some(&Popup::Volume);
-        if is_popup && self.volume < 1.00 {
+    pub fn raise_volume(&mut self) {
+        if self.volume < 1.00 {
             self.volume += 0.01;
             self.tx.send(AudioCommand::SetVolume(self.volume));
         }
-        is_popup
+    }
+
+    pub fn set_volume(&mut self, percentage: u8) {
+        self.volume = percentage as f32 / 100.0;
+        self.tx.send(AudioCommand::SetVolume(self.volume));
     }
 
     fn toggle_popup(&mut self, p: Popup) {
@@ -404,6 +405,23 @@ impl fmt::Display for InvalidFocusError {
         write!(f, "Pressed key in unknown window")
     }
 }
+
+pub fn popup_input_handler(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    mut frame: &mut Frame,
+    event: &KeyEvent,
+) -> Result<Option<MenuItem>, Box<dyn Error>> {
+    let mut popup = frame.get_popup();
+    if popup.is_none() {
+        return Ok(None);
+    }
+    let popup = popup.unwrap();
+    match popup {
+        &Popup::Volume => return volume_input_handler(terminal, frame, event),
+        &Popup::KeyBindings => return Ok(None),
+    }
+}
+
 impl Error for InvalidFocusError {}
 
 pub fn input_handler<'a>(
@@ -427,6 +445,15 @@ pub fn input_handler<'a>(
         Event::Input(event) => {
             let (mut frame, gih) = general_input_handler(terminal, frame, &event);
             if gih.is_none() {
+                let popup_new_menu_item = popup_input_handler(terminal, &mut frame, &event);
+                if popup_new_menu_item.is_err() {
+                    return (frame, Err(popup_new_menu_item.unwrap_err()));
+                } else {
+                    let popup_new_menu_item = popup_new_menu_item.unwrap();
+                    if popup_new_menu_item.is_some() {
+                        return (frame, Ok(popup_new_menu_item.unwrap()));
+                    }
+                }
                 let ami = frame.get_active_window().active_menu_item();
                 match ami {
                     MenuItem::Rosary => {
