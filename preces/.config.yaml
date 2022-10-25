@@ -7,20 +7,31 @@
 # Finally, an order is specified
 # It lists prayers in the order they should be prayed
 # Groups can be used instead of filenames
+# Prayers or groups in order can have the following attributes:
+# count: Number of prayers to include from group (repeat if count highter than available)
+# random: Whether to take prayers from group at random (potential repeats)
+# chance: Percentage indicating how likely this prayer/group is to be included
 
 title: "evening_prayer"
 prayers:
   closing:
     - "jordanville/st_antiochus"
-    - "jordanville/st_marcarius_the_great"
+    - "jordanville/st_macarius_the_great_I"
+    - "jordanville/to_the_holy_spirit"
+    - "jordanville/st_macarius_the_great_I"
     - "oratio_Iesu"
 order:
+  - "signum_crucis"
   - "komplet/te_lucis_ante_terminum"
+  - "komplet/confiteor":
+      chance: 50
+  - "komplet/converte"
   - "jordanville/prayer_before_sleep"
   - "jordanville/troparia_before_sleep"
   - closing:
-      count: 1 # TODO: Count ranges like 0-4
+      count: 1
       random: true
+  - "signum_crucis"
 ---
 title: "oratio_Iesu"
 order:
