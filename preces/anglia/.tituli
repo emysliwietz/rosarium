@@ -22,6 +22,12 @@ jordanville/st_macarius_the_great_II: Prayer of St. Macarius the Great
 jordanville/st_antiochus: Prayer of Saint Antiochus
 jordanville/to_the_holy_spirit: Prayer to the Holy Spirit
 
+angelus: Angelus
+angelus/prima_interjectio: Revelation
+angelus/secunda_interjectio: Submission
+angelus/tertia_interjectio: Incarnation
+angelus/quarta_interjectio: Angelus
+
 evening_prayer: Evening Prayer
 rosarium: Rosary
 pro_fide: for faith

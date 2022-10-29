@@ -16,6 +16,12 @@ symbolum_apostolorum: Symbolum Apostolorum
 symbolum_nicaenum: Symbolum Nicaenum
 laudetur_Iesus_Christus: Laudetur Jesus Christus
 
+angelus: Angelus Dei
+angelus/prima_interjectio: Angelus Dei
+angelus/secunda_interjectio: Submissiō
+angelus/tertia_interjectio: Incarnatio
+angelus/quarta_interjectio: Angelus Dei
+
 evening_prayer: Prex Vesperī
 rosarium: Rosarium
 pro_fide: pro fide

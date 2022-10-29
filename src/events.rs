@@ -11,29 +11,33 @@ use tui::{backend::CrosstermBackend, Terminal};
 
 pub fn get_keybindings(f: &Frame) -> String {
     let mut keybinds = String::from(
-        "?: Toggle Keybindings
-r: Refresh window
-q: Quit
+        "?:   Toggle Keybindings
+r:   Refresh window
+q:   Quit
 
-j: Scroll up
-k: Scroll down
+j:   Scroll up
+k:   Scroll down
 
-x: Cycle language
-
-p: Play/Pause audio (if available for current window)
-v: Toggle Volume Popup
-h: Lower Volume (when volume popup active)
-l: Raise Volume (when volume popup active)
-
-H: Split window horizontal
-L: Split window vertical
+x:   Cycle language
 ",
     );
     keybinds += match f.get_active_window_ro().active_menu_item() {
-        MenuItem::Rosary => "Space/l/Right: Advance Rosary\nBackspace/h/Left: Recede Rosary",
-        MenuItem::PrayerSet(_) => "Space/l/Right: Advance Prayer\nBackspace/h/Left: Recede Prayer",
+        MenuItem::Rosary => "\nSpace/l/Right: Advance Rosary\nBackspace/h/Left: Recede Rosary",
+        MenuItem::PrayerSet(_) => {
+            "\nSpace/l/Right: Advance Prayer\nBackspace/h/Left: Recede Prayer"
+        }
         _ => "",
     };
+    keybinds += "\n
+p:   Play/Pause audio (if available for current window)
+v:   Toggle Volume Popup
+h:   Lower Volume (when volume popup active)
+l:   Raise Volume (when volume popup active)
+1-9: Set Volume to 10-90% (0 sets to 100%)
+
+H:   Split window horizontal
+L:   Split window vertical
+";
     keybinds
 }
 
@@ -87,6 +91,7 @@ pub fn volume_input_handler<'a>(
     match event.code {
         KeyCode::Char('h') => frame.lower_volume(),
         KeyCode::Char('l') => frame.raise_volume(),
+        KeyCode::Char('m') => frame.set_volume(0),
         KeyCode::Char('1') => frame.set_volume(10),
         KeyCode::Char('2') => frame.set_volume(20),
         KeyCode::Char('3') => frame.set_volume(30),

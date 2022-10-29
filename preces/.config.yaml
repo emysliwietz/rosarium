@@ -33,6 +33,18 @@ order:
       random: true
   - "signum_crucis"
 ---
+title: "angelus"
+order:
+  - "angelus/prima_interjectio"
+  - "ave_maria"
+  - "angelus/secunda_interjectio"
+  - "ave_maria"
+  - "angelus/tertia_interjectio"
+  - "ave_maria"
+  - "angelus/quarta_interjectio"
+  - "gloria_patri":
+      count: 3
+---
 title: "oratio_Iesu"
 order:
   - "oratio_Iesu"

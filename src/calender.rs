@@ -1,6 +1,6 @@
 use crate::rosary::Mysteries;
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
-use chrono::{DateTime, Datelike, Local, NaiveDate, Weekday};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Weekday};
 
 pub fn weekday() -> &'static str {
     match chrono::offset::Local::now().weekday() {
@@ -70,4 +70,157 @@ fn special(time: DateTime<Local>) -> Option<Mysteries> {
         return Some(Joyful);
     }
     None
+}
+
+pub struct AnnusLiturgicus {
+    festum_circumcisionis_domini: NaiveDate,
+    epiphan_domini: NaiveDate,
+    // Purificatio Mariae
+    praesentatio_domini: NaiveDate,
+    septuagesima: NaiveDate,
+    sexagesima: NaiveDate,
+    quinquagesima: NaiveDate,
+    dies_cinerum: NaiveDate,
+    quadragesima: NaiveDate,
+    dominica_reminiscere: NaiveDate,
+    dominica_oculi: NaiveDate,
+    dominica_laetare: NaiveDate,
+    annuntiatio_beatae_mariae_virginis: NaiveDate,
+    dominica_de_passione: NaiveDate,
+    dominica_in_palmis_de_passione_domini: NaiveDate,
+    dies_cenae_domini: NaiveDate,
+    dies_passionis_domini: NaiveDate,
+    dominica_resurrectionis_domini: NaiveDate,
+    easter_monday: NaiveDate,
+    easter_tuesday: NaiveDate,
+    dominica_in_albis: NaiveDate,
+    dominica_misericordia: NaiveDate,
+    dominica_jubilate: NaiveDate,
+    dominica_cantate: NaiveDate,
+    dominica_rogate: NaiveDate,
+    ascensio_domini: NaiveDate,
+    dominica_exaudi: NaiveDate,
+    pentecostes: NaiveDate,
+    dominica_trinitatis: NaiveDate,
+    nativitas_ioannis_baptistae: NaiveDate,
+    festum_michaeli: NaiveDate,
+    omnium_sanctorum: NaiveDate,
+    festum_sancti_martini: NaiveDate,
+    first_advent: NaiveDate,
+    second_advent: NaiveDate,
+    third_advent: NaiveDate,
+    fourth_advent: NaiveDate,
+    festum_nativitatis_domini: NaiveDate,
+    festum_st_johannis_evangelistae: NaiveDate,
+    third_christmas_day: NaiveDate,
+}
+
+impl AnnusLiturgicus {
+    pub fn new(year: DateTime<Local>) -> AnnusLiturgicus {
+        let easter = pascha(year).expect("Wrong date");
+        let dies_cinerum = days_before(easter, 46);
+        let quinquagesima = sunday_before(dies_cinerum);
+        let pentecostes = days_after(easter, 49);
+        let festum_nativitatis_domini = NaiveDate::from_ymd(year.year(), 12, 25);
+        let fourth_advent = sunday_before(festum_nativitatis_domini);
+
+        AnnusLiturgicus {
+            festum_circumcisionis_domini: NaiveDate::from_ymd(year.year(), 1, 1),
+            epiphan_domini: NaiveDate::from_ymd(year.year(), 1, 6),
+            // Purificatio Mariae
+            praesentatio_domini: NaiveDate::from_ymd(year.year(), 1, 6),
+            septuagesima: weeks_before(quinquagesima, 2),
+            sexagesima: weeks_before(quinquagesima, 1),
+            quinquagesima,
+            dies_cinerum,
+            quadragesima: weeks_before(easter, 6),
+            dominica_reminiscere: weeks_before(easter, 5),
+            dominica_oculi: weeks_before(easter, 4),
+            dominica_laetare: weeks_before(easter, 3),
+            annuntiatio_beatae_mariae_virginis: NaiveDate::from_ymd(year.year(), 3, 25),
+            dominica_de_passione: weeks_before(easter, 2),
+            dominica_in_palmis_de_passione_domini: sunday_before(easter),
+            dies_cenae_domini: weekday_before(easter, Weekday::Thu),
+            dies_passionis_domini: weekday_before(easter, Weekday::Fri),
+            dominica_resurrectionis_domini: easter,
+            easter_monday: weekday_after(easter, Weekday::Mon),
+            easter_tuesday: weekday_after(easter, Weekday::Tue),
+            dominica_in_albis: sunday_after(easter),
+            dominica_misericordia: weeks_after(easter, 2),
+            dominica_jubilate: weeks_after(easter, 3),
+            dominica_cantate: weeks_after(easter, 4),
+            dominica_rogate: weeks_after(easter, 5),
+            ascensio_domini: days_after(easter, 39),
+            dominica_exaudi: weeks_after(easter, 6),
+            pentecostes,
+            dominica_trinitatis: sunday_after(pentecostes),
+            nativitas_ioannis_baptistae: NaiveDate::from_ymd(year.year(), 6, 24),
+            festum_michaeli: NaiveDate::from_ymd(year.year(), 9, 29),
+            omnium_sanctorum: NaiveDate::from_ymd(year.year(), 11, 1),
+            festum_sancti_martini: NaiveDate::from_ymd(year.year(), 11, 11),
+            first_advent: weeks_before(fourth_advent, 3),
+            second_advent: weeks_before(fourth_advent, 2),
+            third_advent: weeks_before(fourth_advent, 1),
+            fourth_advent,
+            festum_nativitatis_domini,
+            festum_st_johannis_evangelistae: days_after(festum_nativitatis_domini, 1),
+            third_christmas_day: days_after(festum_nativitatis_domini, 2),
+        }
+    }
+}
+
+fn weekday_before(date: NaiveDate, weekday: Weekday) -> NaiveDate {
+    let mut new_date = date.clone().pred();
+    while new_date.weekday() != weekday {
+        new_date = new_date.pred();
+    }
+    return new_date;
+}
+
+fn weekday_after(date: NaiveDate, weekday: Weekday) -> NaiveDate {
+    let mut new_date = date.clone().succ();
+    while new_date.weekday() != weekday {
+        new_date = new_date.succ();
+    }
+    return new_date;
+}
+
+fn sunday_before(date: NaiveDate) -> NaiveDate {
+    weekday_before(date, Weekday::Sun)
+}
+
+fn sunday_after(date: NaiveDate) -> NaiveDate {
+    weekday_after(date, Weekday::Sun)
+}
+
+fn weeks_before(date: NaiveDate, weeks: i64) -> NaiveDate {
+    let d = date.clone();
+    d.checked_sub_signed(Duration::weeks(weeks))
+        .expect("Wrong date calculation")
+}
+
+fn weeks_after(date: NaiveDate, weeks: i64) -> NaiveDate {
+    let d = date.clone();
+    d.checked_add_signed(Duration::weeks(weeks))
+        .expect("Wrong date calculation")
+}
+
+fn days_before(date: NaiveDate, days: i64) -> NaiveDate {
+    let d = date.clone();
+    d.checked_sub_signed(Duration::days(days))
+        .expect("Wrong date calculation")
+}
+
+fn days_after(date: NaiveDate, days: i64) -> NaiveDate {
+    let d = date.clone();
+    d.checked_add_signed(Duration::days(days))
+        .expect("Wrong date calculation")
+}
+
+fn pascha(year: DateTime<Local>) -> Option<NaiveDate> {
+    let easter = bdays::easter::easter_naive_date(year.year());
+    if easter.is_err() {
+        return None;
+    }
+    return Some(easter.unwrap());
 }

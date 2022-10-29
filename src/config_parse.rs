@@ -147,7 +147,8 @@ pub fn pick_and_apply_properties<'a>(
         order.push(if p.random {
             group.choose(rng).expect(E).clone()
         } else {
-            group[i & group.len()].clone()
+            println!("{:?}", group.len());
+            group[i % group.len()].clone()
         })
     }
     order

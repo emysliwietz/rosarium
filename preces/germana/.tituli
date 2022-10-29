@@ -15,6 +15,13 @@ symbolum_apostolorum: Apostolische Glaubensbekenntnis
 symbolum_nicaenum: Große Glaubensbekenntnis
 laudetur_Iesus_Christus: Gelobt sei Jesus Christus
 
+
+angelus: Der Engel des Herrn
+angelus/prima_interjectio: Verkündung
+angelus/secunda_interjectio: Unterwerfung
+angelus/tertia_interjectio: Fleischwerdung
+angelus/quarta_interjectio: Der Engel des Herrn
+
 evening_prayer: Abendgebet
 rosarium: Rosenkranz
 pro_fide: für den Glauben
