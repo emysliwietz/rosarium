@@ -118,19 +118,19 @@ pub struct AnnusLiturgicus {
 type LiturgicalDate = (&'static str, NaiveDate);
 
 impl AnnusLiturgicus {
-    pub fn new(year: DateTime<Local>) -> AnnusLiturgicus {
+    pub fn new(year: i32) -> AnnusLiturgicus {
         let easter = pascha(year).expect("Wrong date");
         let dies_cinerum = days_before(easter, 46);
         let quinquagesima = sunday_before(dies_cinerum);
         let pentecostes = days_after(easter, 49);
-        let festum_nativitatis_domini = NaiveDate::from_ymd(year.year(), 12, 25);
+        let festum_nativitatis_domini = NaiveDate::from_ymd(year, 12, 25);
         let fourth_advent = sunday_before(festum_nativitatis_domini);
 
         AnnusLiturgicus {
-            festum_circumcisionis_domini: NaiveDate::from_ymd(year.year(), 1, 1),
-            epiphan_domini: NaiveDate::from_ymd(year.year(), 1, 6),
+            festum_circumcisionis_domini: NaiveDate::from_ymd(year, 1, 1),
+            epiphan_domini: NaiveDate::from_ymd(year, 1, 6),
             // Purificatio Mariae
-            praesentatio_domini: NaiveDate::from_ymd(year.year(), 1, 6),
+            praesentatio_domini: NaiveDate::from_ymd(year, 2, 2),
             septuagesima: weeks_before(quinquagesima, 2),
             sexagesima: weeks_before(quinquagesima, 1),
             quinquagesima,
@@ -139,7 +139,7 @@ impl AnnusLiturgicus {
             dominica_reminiscere: weeks_before(easter, 5),
             dominica_oculi: weeks_before(easter, 4),
             dominica_laetare: weeks_before(easter, 3),
-            annuntiatio_beatae_mariae_virginis: NaiveDate::from_ymd(year.year(), 3, 25),
+            annuntiatio_beatae_mariae_virginis: NaiveDate::from_ymd(year, 3, 25),
             dominica_de_passione: weeks_before(easter, 2),
             dominica_in_palmis_de_passione_domini: sunday_before(easter),
             dies_cenae_domini: weekday_before(easter, Weekday::Thu),
@@ -156,10 +156,10 @@ impl AnnusLiturgicus {
             dominica_exaudi: weeks_after(easter, 6),
             pentecostes,
             dominica_trinitatis: sunday_after(pentecostes),
-            nativitas_ioannis_baptistae: NaiveDate::from_ymd(year.year(), 6, 24),
-            festum_michaeli: NaiveDate::from_ymd(year.year(), 9, 29),
-            omnium_sanctorum: NaiveDate::from_ymd(year.year(), 11, 1),
-            festum_sancti_martini: NaiveDate::from_ymd(year.year(), 11, 11),
+            nativitas_ioannis_baptistae: NaiveDate::from_ymd(year, 6, 24),
+            festum_michaeli: NaiveDate::from_ymd(year, 9, 29),
+            omnium_sanctorum: NaiveDate::from_ymd(year, 11, 1),
+            festum_sancti_martini: NaiveDate::from_ymd(year, 11, 11),
             first_advent: weeks_before(fourth_advent, 3),
             second_advent: weeks_before(fourth_advent, 2),
             third_advent: weeks_before(fourth_advent, 1),
@@ -281,8 +281,8 @@ fn days_after(date: NaiveDate, days: i64) -> NaiveDate {
         .expect("Wrong date calculation")
 }
 
-fn pascha(year: DateTime<Local>) -> Option<NaiveDate> {
-    let easter = bdays::easter::easter_naive_date(year.year());
+fn pascha(year: i32) -> Option<NaiveDate> {
+    let easter = bdays::easter::easter_naive_date(year);
     if easter.is_err() {
         return None;
     }

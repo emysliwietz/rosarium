@@ -5,15 +5,17 @@ use crate::language::{self, get_title_translation};
 use crate::rosary::get_daily_mystery;
 use crate::tui::{Frame, MenuItem, Popup, Window, WindowStack};
 use crate::tui_util::{centered_rect, cursive_p, hcenter};
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime, Weekday};
 use std::error::Error;
 use std::io::Stdout;
+use std::ops::Add;
 use tui::backend::CrosstermBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
 use tui::widgets::{
-    Block, BorderType, Borders, Clear, Gauge, LineGauge, List, ListItem, Paragraph, Widget, Wrap,
+    Block, BorderType, Borders, Cell, Clear, Gauge, LineGauge, List, ListItem, Paragraph, Row,
+    Table, Widget, Wrap,
 };
 use tui::Terminal;
 
@@ -153,16 +155,117 @@ pub fn render_keybindings<'a>(frame: &mut Frame) -> Paragraph<'a> {
         )
 }
 
-pub fn render_calendar<'a>(al: AnnusLiturgicus, today: DateTime<Local>) -> List<'a> {
+pub fn render_error<'a>(frame: &mut Frame) -> Paragraph<'a> {
+    Paragraph::new(frame.get_active_window().error())
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: false })
+        .scroll(frame.get_active_window().get_offset())
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Red))
+                .style(Style::default().fg(Color::Red))
+                .title("Error")
+                .border_type(BorderType::Rounded),
+        )
+}
+
+pub fn render_calendar<'a>(
+    al: &AnnusLiturgicus,
+    selected_day: DateTime<Local>,
+    today: DateTime<Local>,
+    window: &Window,
+) -> Table<'a> {
     let mut items = vec![];
-    for (name, date) in al.to_vec() {
-        items.push(ListItem::new(format!("{:?} - {}", date, name)));
+    let mut i = 0;
+    let mut al = al.to_vec();
+    if al[0].1.year() == today.year() {
+        al.push(("Today", today.naive_local().date()));
     }
-    List::new(items)
-        .block(Block::default().title("Calendar").borders(Borders::ALL))
+    al.sort_by(|a, b| a.1.cmp(&b.1));
+    for (name, date) in al {
+        if i >= window.get_offset().0 {
+            items.push(Row::new(vec![date.to_string(), name.to_owned()]));
+        }
+        i += 1;
+    }
+    Table::new(items)
+        .block(
+            Block::default()
+                .title("Calendar")
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded),
+        )
         .style(Style::default().fg(Color::White))
         .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
         .highlight_symbol(">>")
+        .header(Row::new(vec!["Date".to_owned(), "Name".to_owned()]).bottom_margin(1))
+        .widths(&[Constraint::Min(12), Constraint::Min(30)])
+}
+
+pub fn render_month<'a>(
+    al: &AnnusLiturgicus,
+    selected_day: DateTime<Local>,
+    today: DateTime<Local>,
+    window: &Window,
+) -> Table<'a> {
+    let mut day = NaiveDate::from_ymd(selected_day.year(), selected_day.month(), 1);
+    let a = day.weekday().num_days_from_sunday();
+    let mut weeks = vec![];
+    let mut week_row = vec![Cell::from(" ")];
+    for _ in 0..a {
+        week_row.push(Cell::from("  "))
+    }
+    while day.month() == selected_day.month() {
+        let mut d = Cell::from(format!("{:0>2}", day.day()));
+        if day == selected_day.naive_local().date() {
+            d = d.style(
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::LightYellow)
+                    .add_modifier(Modifier::ITALIC)
+                    .add_modifier(Modifier::BOLD),
+            );
+        } else if day == today.naive_local().date() {
+            d = d.style(
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::ITALIC)
+                    .add_modifier(Modifier::BOLD),
+            );
+        }
+        week_row.push(d);
+        if day.weekday() == Weekday::Sat {
+            week_row.push(Cell::from(""));
+            weeks.push(Row::new(week_row));
+            week_row = vec![Cell::from(" ")];
+        }
+        day = day.succ();
+    }
+    weeks.push(Row::new(week_row));
+    Table::new(weeks)
+        .block(
+            Block::default()
+                .title(format!("{} {}", selected_day.month(), selected_day.year()))
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded),
+        )
+        .style(Style::default().fg(Color::White))
+        .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+        .highlight_symbol(">>")
+        .header(Row::new(vec!["", "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", ""]).bottom_margin(1))
+        .widths(&[
+            Constraint::Max(1),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(0),
+        ])
 }
 
 pub fn draw_rosary(
@@ -217,6 +320,7 @@ pub fn draw_frame_popup(
     match frame.get_popup().unwrap() {
         &Popup::Volume => draw_volume_popup(frame, rect, chunk),
         &Popup::KeyBindings => draw_keybinding_popup(frame, rect, chunk),
+        &Popup::Error => draw_error_popup(frame, rect, chunk),
     }
 }
 
@@ -228,6 +332,16 @@ pub fn draw_keybinding_popup(
     let popup_chunk = centered_rect(80, 60, 10, chunk);
     rect.render_widget(Clear, popup_chunk);
     rect.render_widget(render_keybindings(frame), popup_chunk);
+}
+
+pub fn draw_error_popup(
+    frame: &mut Frame,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
+) {
+    let popup_chunk = centered_rect(80, 60, 10, chunk);
+    rect.render_widget(Clear, popup_chunk);
+    rect.render_widget(render_error(frame), popup_chunk);
 }
 
 pub fn draw_volume_popup(
@@ -245,9 +359,18 @@ pub fn draw_calendar(
     rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
+    let split = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Min(20), Constraint::Max(24)])
+        .split(*chunk);
     let today = chrono::offset::Local::now();
-    let al = AnnusLiturgicus::new(today);
-    rect.render_widget(render_calendar(al, today), *chunk);
+    let day_offset = window.get_signed_offset().1;
+    let selected_day = today
+        .checked_add_signed(Duration::days(day_offset.into()))
+        .unwrap();
+    let al = AnnusLiturgicus::new(selected_day.year());
+    rect.render_widget(render_calendar(&al, selected_day, today, window), split[0]);
+    rect.render_widget(render_month(&al, selected_day, today, window), split[1]);
     Ok(())
 }
 

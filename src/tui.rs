@@ -1,6 +1,8 @@
 use crate::audio::{audio_thread, AudioCommand};
 use crate::config_parse::get_all_prayset_titles;
-use crate::events::{general_input_handler, prayer_set_input_handler, volume_input_handler};
+use crate::events::{
+    calendar_input_handler, general_input_handler, prayer_set_input_handler, volume_input_handler,
+};
 use crate::prayer::PrayerSet;
 use crate::rosary::Rosary;
 use crate::{events::rosary_input_handler, language::Language};
@@ -49,6 +51,7 @@ pub enum WindowStack {
 pub enum Popup {
     Volume,
     KeyBindings,
+    Error,
 }
 
 pub struct Frame {
@@ -211,8 +214,8 @@ impl Frame {
 
 #[derive(Debug)]
 pub struct Window {
-    x: u16,
-    y: u16,
+    x: i16,
+    y: i16,
     lang: Language,
     parent_h: u16,
     parent_w: u16,
@@ -259,6 +262,12 @@ impl Window {
     }
 
     pub fn get_offset(&self) -> (u16, u16) {
+        let x = if self.x < 0 { 0 } else { self.x };
+        let y = if self.y < 0 { 0 } else { self.y };
+        (x as u16, y as u16)
+    }
+
+    pub fn get_signed_offset(&self) -> (i16, i16) {
         (self.x, self.y)
     }
 
@@ -287,21 +296,25 @@ impl Window {
     }
 
     pub fn up(&mut self) {
-        if self.x != u16::MAX {
+        if self.x != i16::MAX {
             self.x += 1;
         }
     }
 
     pub fn left(&mut self) {
-        if self.y != 0 {
+        if self.y != i16::MIN {
             self.y -= 1;
         }
     }
 
     pub fn right(&mut self) {
-        if self.y != u16::MAX {
+        if self.y != i16::MAX {
             self.y += 1;
         }
+    }
+
+    pub fn reset_horizontal_scroll(&mut self) {
+        self.y = 0
     }
 
     pub fn set_parent_dims(&mut self, w: u16, h: u16) {
@@ -309,7 +322,7 @@ impl Window {
         self.parent_h = h;
     }
 
-    pub fn get_y(&self) -> u16 {
+    pub fn get_y(&self) -> i16 {
         self.y
     }
 
@@ -418,6 +431,7 @@ pub fn popup_input_handler(
     match popup {
         &Popup::Volume => return volume_input_handler(terminal, frame, event),
         &Popup::KeyBindings => return Ok(None),
+        &Popup::Error => return Ok(None),
     }
 }
 
@@ -463,6 +477,11 @@ pub fn input_handler<'a>(
                         let epih = prayer_set_input_handler(terminal, &mut frame, &event);
                         (frame, epih)
                     }
+                    MenuItem::Calendar => {
+                        let epih = calendar_input_handler(terminal, &mut frame, &event);
+                        (frame, epih)
+                    }
+
                     _ => (frame, Ok(ami)),
                 }
             } else {

@@ -126,6 +126,23 @@ pub fn rosary_input_handler<'a>(
     Ok(frame.get_active_window().active_menu_item())
 }
 
+pub fn calendar_input_handler<'a>(
+    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+    frame: &'a mut Frame,
+    event: &KeyEvent,
+) -> Result<MenuItem, Box<dyn Error>> {
+    match event.code {
+        KeyCode::Char('l') => frame.get_active_window().right(),
+        KeyCode::Char('h') => frame.get_active_window().left(),
+        KeyCode::Left => frame.get_active_window().left(),
+        KeyCode::Right => frame.get_active_window().right(),
+        KeyCode::Char('t') => frame.get_active_window().reset_horizontal_scroll(),
+        _ => {}
+    }
+    redraw(terminal, frame)?;
+    Ok(frame.get_active_window().active_menu_item())
+}
+
 pub fn prayer_set_input_handler<'a>(
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     frame: &'a mut Frame,
