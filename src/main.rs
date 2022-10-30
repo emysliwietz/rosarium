@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, stdout};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -7,6 +7,7 @@ use crossterm::{
     event::{self, Event as CEvent},
     terminal::enable_raw_mode,
 };
+use crossterm::{terminal, ExecutableCommand};
 
 use rosarium::config_parse;
 use rosarium::render::redraw;
@@ -14,6 +15,10 @@ use rosarium::tui::{key_listen, Event, Frame, MenuItem};
 use tui::{backend::CrosstermBackend, Terminal};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use std::time::Duration;
+    stdout()
+        .execute(event::EnableMouseCapture)
+        .expect("No mouse capture support");
     enable_raw_mode().expect("can run in raw mode");
 
     let mut frame = Frame::new();
@@ -45,6 +50,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // println!("{:?}", Event::Input(key));
                     } else if let CEvent::Resize(x, y) = event::read().expect("can't read events") {
                         tx.send(Event::Refresh(x, y)).expect("can't send events");
+                    } else if let CEvent::Mouse(m) = event::read().expect("can't read events") {
+                        //println!("{:?}", m);
                     }
                 }
                 /*
