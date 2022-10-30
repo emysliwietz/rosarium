@@ -1,16 +1,20 @@
+use crate::calender::AnnusLiturgicus;
 use crate::events::get_keybindings;
 use crate::language::{self, get_title_translation};
 
 use crate::rosary::get_daily_mystery;
 use crate::tui::{Frame, MenuItem, Popup, Window, WindowStack};
 use crate::tui_util::{centered_rect, cursive_p, hcenter};
+use chrono::{DateTime, Local};
 use std::error::Error;
 use std::io::Stdout;
 use tui::backend::CrosstermBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
-use tui::widgets::{Block, BorderType, Borders, Clear, Gauge, LineGauge, Paragraph, Widget, Wrap};
+use tui::widgets::{
+    Block, BorderType, Borders, Clear, Gauge, LineGauge, List, ListItem, Paragraph, Widget, Wrap,
+};
 use tui::Terminal;
 
 pub fn render_prayer_set<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
@@ -149,6 +153,18 @@ pub fn render_keybindings<'a>(frame: &mut Frame) -> Paragraph<'a> {
         )
 }
 
+pub fn render_calendar<'a>(al: AnnusLiturgicus, today: DateTime<Local>) -> List<'a> {
+    let mut items = vec![];
+    for (name, date) in al.to_vec() {
+        items.push(ListItem::new(format!("{:?} - {}", date, name)));
+    }
+    List::new(items)
+        .block(Block::default().title("Calendar").borders(Borders::ALL))
+        .style(Style::default().fg(Color::White))
+        .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+        .highlight_symbol(">>")
+}
+
 pub fn draw_rosary(
     window: &mut Window,
     rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
@@ -224,6 +240,17 @@ pub fn draw_volume_popup(
     rect.render_widget(render_volume(frame), popup_chunk);
 }
 
+pub fn draw_calendar(
+    window: &mut Window,
+    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    chunk: &mut Rect,
+) -> Result<(), Box<dyn Error>> {
+    let today = chrono::offset::Local::now();
+    let al = AnnusLiturgicus::new(today);
+    rect.render_widget(render_calendar(al, today), *chunk);
+    Ok(())
+}
+
 pub fn refresh(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     frame: &mut Frame,
@@ -283,15 +310,8 @@ fn redraw_window(
 ) -> Result<(), Box<dyn Error>> {
     match window.active_menu_item() {
         MenuItem::Rosary => draw_rosary(window, rect, chunk),
-        MenuItem::Settings => {
-            /*let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(
-                [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
-            )
-            .split(chunks[0]);*/
-            Ok(())
-        }
+        MenuItem::Calendar => draw_calendar(window, rect, chunk),
+        MenuItem::Settings => Ok(()),
         MenuItem::Quit => Ok(()),
         MenuItem::_NOQUIT => Ok(()),
         MenuItem::PrayerSet(_) => draw_prayer_set(window, rect, chunk),

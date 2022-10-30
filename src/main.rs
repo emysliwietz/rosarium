@@ -8,16 +8,13 @@ use crossterm::{
     terminal::enable_raw_mode,
 };
 
-use rosarium::calender::annus_liturgicus;
 use rosarium::config_parse;
 use rosarium::render::redraw;
 use rosarium::tui::{key_listen, Event, Frame, MenuItem};
 use tui::{backend::CrosstermBackend, Terminal};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    annus_liturgicus();
-    return Ok(());
-    //enable_raw_mode().expect("can run in raw mode");
+    enable_raw_mode().expect("can run in raw mode");
 
     let mut frame = Frame::new();
 

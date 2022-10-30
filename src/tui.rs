@@ -26,22 +26,9 @@ pub enum MenuItem {
     _NOQUIT,
     Rosary,
     PrayerSet(usize),
+    Calendar,
     Settings,
     Quit,
-}
-
-impl From<MenuItem> for usize {
-    fn from(input: MenuItem) -> usize {
-        match input {
-            // Use _NOQUIT when calculating the true menu item is too costly,
-            // but only the QUIT behavior is important
-            MenuItem::_NOQUIT => 255,
-            MenuItem::Quit => 0,
-            MenuItem::Rosary => 1,
-            MenuItem::Settings => 2,
-            MenuItem::PrayerSet(i) => 3 + i,
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -381,16 +368,17 @@ impl Window {
                 if num_prayer_sets > 0 {
                     MenuItem::PrayerSet(0)
                 } else {
-                    MenuItem::Rosary
+                    MenuItem::Calendar
                 }
             }
             MenuItem::PrayerSet(i) => {
                 if i < num_prayer_sets - 1 {
                     MenuItem::PrayerSet(i + 1)
                 } else {
-                    MenuItem::Rosary
+                    MenuItem::Calendar
                 }
             }
+            MenuItem::Calendar => MenuItem::Rosary,
             _ => self.item,
         }
     }

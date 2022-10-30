@@ -115,6 +115,8 @@ pub struct AnnusLiturgicus {
     third_christmas_day: NaiveDate,
 }
 
+type LiturgicalDate = (&'static str, NaiveDate);
+
 impl AnnusLiturgicus {
     pub fn new(year: DateTime<Local>) -> AnnusLiturgicus {
         let easter = pascha(year).expect("Wrong date");
@@ -166,6 +168,68 @@ impl AnnusLiturgicus {
             festum_st_johannis_evangelistae: days_after(festum_nativitatis_domini, 1),
             third_christmas_day: days_after(festum_nativitatis_domini, 2),
         }
+    }
+
+    pub fn to_vec(&self) -> Vec<LiturgicalDate> {
+        vec![
+            (
+                "festum_circumcisionis_domini",
+                self.festum_circumcisionis_domini,
+            ),
+            ("epiphan_domini", self.epiphan_domini),
+            ("praesentatio_domini", self.praesentatio_domini),
+            ("septuagesima", self.septuagesima),
+            ("sexagesima", self.sexagesima),
+            ("quinquagesima", self.quinquagesima),
+            ("dies_cinerum", self.dies_cinerum),
+            ("quadragesima", self.quadragesima),
+            ("dominica_reminiscere", self.dominica_reminiscere),
+            ("dominica_oculi", self.dominica_oculi),
+            ("dominica_laetare", self.dominica_laetare),
+            (
+                "annuntiatio_beatae_mariae_virginis",
+                self.annuntiatio_beatae_mariae_virginis,
+            ),
+            ("dominica_de_passione", self.dominica_de_passione),
+            (
+                "dominica_in_palmis_de_passione_domini",
+                self.dominica_in_palmis_de_passione_domini,
+            ),
+            ("dies_cenae_domini", self.dies_cenae_domini),
+            ("dies_passionis_domini", self.dies_passionis_domini),
+            (
+                "dominica_resurrectionis_domini",
+                self.dominica_resurrectionis_domini,
+            ),
+            ("easter_monday", self.easter_monday),
+            ("easter_tuesday", self.easter_tuesday),
+            ("dominica_in_albis", self.dominica_in_albis),
+            ("dominica_misericordia", self.dominica_misericordia),
+            ("dominica_jubilate", self.dominica_jubilate),
+            ("dominica_cantate", self.dominica_cantate),
+            ("dominica_rogate", self.dominica_rogate),
+            ("ascensio_domini", self.ascensio_domini),
+            ("dominica_exaudi", self.dominica_exaudi),
+            ("pentecostes", self.pentecostes),
+            ("dominica_trinitatis", self.dominica_trinitatis),
+            (
+                "nativitas_ioannis_baptistae",
+                self.nativitas_ioannis_baptistae,
+            ),
+            ("festum_michaeli", self.festum_michaeli),
+            ("omnium_sanctorum", self.omnium_sanctorum),
+            ("festum_sancti_martini", self.festum_sancti_martini),
+            ("first_advent", self.first_advent),
+            ("second_advent", self.second_advent),
+            ("third_advent", self.third_advent),
+            ("fourth_advent", self.fourth_advent),
+            ("festum_nativitatis_domini", self.festum_nativitatis_domini),
+            (
+                "festum_st_johannis_evangelistae",
+                self.festum_st_johannis_evangelistae,
+            ),
+            ("third_christmas_day", self.third_christmas_day),
+        ]
     }
 }
 
