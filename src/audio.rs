@@ -14,7 +14,7 @@ pub fn audio_thread(mut rx: Receiver<AudioCommand>) -> Result<(), Box<dyn Error>
     thread::Builder::new()
         .name("rosarium - audio".to_string())
         .spawn(move || {
-            let mut sl = Soloud::default();
+            let sl = Soloud::default();
             if sl.is_err() {
                 return;
             }
@@ -40,7 +40,7 @@ pub fn audio_thread(mut rx: Receiver<AudioCommand>) -> Result<(), Box<dyn Error>
                     }
                 };
             }
-        });
+        })?;
     Err(Box::new(ErrorString::Error(
         "Audio player stopped unexpectedly",
     )))
@@ -52,13 +52,13 @@ pub fn play_audio(
     s: String,
 ) -> Result<(), Box<dyn Error>> {
     let mut wav = Wav::default();
-    wav.load(&Path::new(&s));
+    wav.load(&Path::new(&s))?;
     let h = sl.play(&wav);
     while sl.voice_count() > 0 {
         let cmd = rx.recv()?;
         match cmd {
             AudioCommand::Pause => {
-                fade_audio(sl, h);
+                fade_audio(sl, h)?;
                 break;
             }
             AudioCommand::Play(n) => {
@@ -77,7 +77,7 @@ fn fade_to(
     sl: &mut Soloud,
     h: Handle,
 ) -> Result<(), Box<dyn Error>> {
-    fade_audio(sl, h);
+    fade_audio(sl, h)?;
     if old != new {
         return play_audio(rx, sl, new);
     }
@@ -89,6 +89,6 @@ fn fade_audio(sl: &mut Soloud, h: Handle) -> Result<(), Box<dyn Error>> {
         sl.set_volume(h, 1.0 - (i as f32 * 0.01));
         std::thread::sleep(Duration::from_millis(10));
     }
-    sl.destroy_voice_group(h);
+    sl.destroy_voice_group(h)?;
     Ok(())
 }

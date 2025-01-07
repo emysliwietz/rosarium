@@ -55,10 +55,10 @@ fn special(time: DateTime<Local>) -> Option<Mysteries> {
         return Some(Sorrowful);
     }
     // On Advent and Christmas Sundays, pray Joyful
-    let christmas = NaiveDate::from_ymd(time.year(), 12, 24);
+    let christmas = NaiveDate::from_ymd_opt(time.year(), 12, 24)?;
     let mut fourth_advent = christmas.clone();
     while fourth_advent.weekday() != Weekday::Sun {
-        fourth_advent = fourth_advent.pred();
+        fourth_advent = fourth_advent.pred_opt()?;
     }
     let first_advent = fourth_advent.checked_sub_signed(chrono::Duration::weeks(3))?;
     let days_since_first_advent = (time.naive_local().date() - first_advent).num_days();
@@ -122,16 +122,19 @@ impl AnnusLiturgicus {
     pub fn new(year: i32) -> Result<AnnusLiturgicus, E> {
         let easter = pascha(year)?;
         let dies_cinerum = days_before(easter, 46)?;
-        let quinquagesima = sunday_before(dies_cinerum);
+        let quinquagesima = sunday_before(dies_cinerum)?;
         let pentecostes = days_after(easter, 49)?;
-        let festum_nativitatis_domini = NaiveDate::from_ymd(year, 12, 25);
-        let fourth_advent = sunday_before(festum_nativitatis_domini);
+        let festum_nativitatis_domini =
+            NaiveDate::from_ymd_opt(year, 12, 25).ok_or("no nativity date")?;
+        let fourth_advent = sunday_before(festum_nativitatis_domini)?;
 
         Ok(AnnusLiturgicus {
-            festum_circumcisionis_domini: NaiveDate::from_ymd(year, 1, 1),
-            epiphan_domini: NaiveDate::from_ymd(year, 1, 6),
+            festum_circumcisionis_domini: NaiveDate::from_ymd_opt(year, 1, 1)
+                .ok_or("no circumcision date")?,
+            epiphan_domini: NaiveDate::from_ymd_opt(year, 1, 6).ok_or("no epiphany date")?,
             // Purificatio Mariae
-            praesentatio_domini: NaiveDate::from_ymd(year, 2, 2),
+            praesentatio_domini: NaiveDate::from_ymd_opt(year, 2, 2)
+                .ok_or("no presentatio date")?,
             septuagesima: weeks_before(quinquagesima, 2)?,
             sexagesima: weeks_before(quinquagesima, 1)?,
             quinquagesima,
@@ -140,15 +143,16 @@ impl AnnusLiturgicus {
             dominica_reminiscere: weeks_before(easter, 5)?,
             dominica_oculi: weeks_before(easter, 4)?,
             dominica_laetare: weeks_before(easter, 3)?,
-            annuntiatio_beatae_mariae_virginis: NaiveDate::from_ymd(year, 3, 25),
+            annuntiatio_beatae_mariae_virginis: NaiveDate::from_ymd_opt(year, 3, 25)
+                .ok_or("no annuntiatio beatae mariae date")?,
             dominica_de_passione: weeks_before(easter, 2)?,
-            dominica_in_palmis_de_passione_domini: sunday_before(easter),
-            dies_cenae_domini: weekday_before(easter, Weekday::Thu),
-            dies_passionis_domini: weekday_before(easter, Weekday::Fri),
+            dominica_in_palmis_de_passione_domini: sunday_before(easter)?,
+            dies_cenae_domini: weekday_before(easter, Weekday::Thu)?,
+            dies_passionis_domini: weekday_before(easter, Weekday::Fri)?,
             dominica_resurrectionis_domini: easter,
-            easter_monday: weekday_after(easter, Weekday::Mon),
-            easter_tuesday: weekday_after(easter, Weekday::Tue),
-            dominica_in_albis: sunday_after(easter),
+            easter_monday: weekday_after(easter, Weekday::Mon)?,
+            easter_tuesday: weekday_after(easter, Weekday::Tue)?,
+            dominica_in_albis: sunday_after(easter)?,
             dominica_misericordia: weeks_after(easter, 2)?,
             dominica_jubilate: weeks_after(easter, 3)?,
             dominica_cantate: weeks_after(easter, 4)?,
@@ -156,11 +160,15 @@ impl AnnusLiturgicus {
             ascensio_domini: days_after(easter, 39)?,
             dominica_exaudi: weeks_after(easter, 6)?,
             pentecostes,
-            dominica_trinitatis: sunday_after(pentecostes),
-            nativitas_ioannis_baptistae: NaiveDate::from_ymd(year, 6, 24),
-            festum_michaeli: NaiveDate::from_ymd(year, 9, 29),
-            omnium_sanctorum: NaiveDate::from_ymd(year, 11, 1),
-            festum_sancti_martini: NaiveDate::from_ymd(year, 11, 11),
+            dominica_trinitatis: sunday_after(pentecostes)?,
+            nativitas_ioannis_baptistae: NaiveDate::from_ymd_opt(year, 6, 24)
+                .ok_or("no nativity date of John the Baptist")?,
+            festum_michaeli: NaiveDate::from_ymd_opt(year, 9, 29)
+                .ok_or("No date for feast of St. Michael")?,
+            omnium_sanctorum: NaiveDate::from_ymd_opt(year, 11, 1)
+                .ok_or("No date for all saints")?,
+            festum_sancti_martini: NaiveDate::from_ymd_opt(year, 11, 11)
+                .ok_or("No date for St. Martin")?,
             first_advent: weeks_before(fourth_advent, 3)?,
             second_advent: weeks_before(fourth_advent, 2)?,
             third_advent: weeks_before(fourth_advent, 1)?,
@@ -234,27 +242,37 @@ impl AnnusLiturgicus {
     }
 }
 
-fn weekday_before(date: NaiveDate, weekday: Weekday) -> NaiveDate {
-    let mut new_date = date.clone().pred();
+fn weekday_before(date: NaiveDate, weekday: Weekday) -> Result<NaiveDate, E> {
+    let mut new_date = date
+        .clone()
+        .pred_opt()
+        .ok_or_else(|| e("Can't calculate date"))?;
     while new_date.weekday() != weekday {
-        new_date = new_date.pred();
+        new_date = new_date
+            .pred_opt()
+            .ok_or_else(|| e("Can't calculate date"))?;
     }
-    return new_date;
+    Ok(new_date)
 }
 
-fn weekday_after(date: NaiveDate, weekday: Weekday) -> NaiveDate {
-    let mut new_date = date.clone().succ();
+fn weekday_after(date: NaiveDate, weekday: Weekday) -> Result<NaiveDate, E> {
+    let mut new_date = date
+        .clone()
+        .succ_opt()
+        .ok_or_else(|| e("Can't calculate date"))?;
     while new_date.weekday() != weekday {
-        new_date = new_date.succ();
+        new_date = new_date
+            .succ_opt()
+            .ok_or_else(|| e("Can't calculate date"))?;
     }
-    return new_date;
+    Ok(new_date)
 }
 
-fn sunday_before(date: NaiveDate) -> NaiveDate {
+fn sunday_before(date: NaiveDate) -> Result<NaiveDate, E> {
     weekday_before(date, Weekday::Sun)
 }
 
-fn sunday_after(date: NaiveDate) -> NaiveDate {
+fn sunday_after(date: NaiveDate) -> Result<NaiveDate, E> {
     weekday_after(date, Weekday::Sun)
 }
 

@@ -1,6 +1,6 @@
 use crate::calender::AnnusLiturgicus;
 use crate::events::get_keybindings;
-use crate::language::{get_title_translation};
+use crate::language::get_title_translation;
 
 use crate::rosary::get_daily_mystery;
 use crate::tui::{Frame, MenuItem, Popup, Window, WindowStack};
@@ -12,10 +12,7 @@ use tui::backend::CrosstermBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
-use tui::widgets::{
-    Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row,
-    Table, Wrap,
-};
+use tui::widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
 use tui::Terminal;
 
 pub fn render_prayer_set<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
@@ -171,7 +168,7 @@ pub fn render_error<'a>(frame: &mut Frame) -> Paragraph<'a> {
 
 pub fn render_calendar<'a>(
     al: &AnnusLiturgicus,
-    selected_day: DateTime<Local>,
+    _selected_day: DateTime<Local>,
     today: DateTime<Local>,
     window: &Window,
 ) -> Table<'a> {
@@ -203,12 +200,13 @@ pub fn render_calendar<'a>(
 }
 
 pub fn render_month<'a>(
-    al: &AnnusLiturgicus,
+    _al: &AnnusLiturgicus,
     selected_day: DateTime<Local>,
     today: DateTime<Local>,
-    window: &Window,
-) -> Table<'a> {
-    let mut day = NaiveDate::from_ymd(selected_day.year(), selected_day.month(), 1);
+    _window: &Window,
+) -> Result<Table<'a>, Box<dyn Error>> {
+    let mut day = NaiveDate::from_ymd_opt(selected_day.year(), selected_day.month(), 1)
+        .ok_or("Date could not be parsed")?;
     let a = day.weekday().num_days_from_sunday();
     let mut weeks = vec![];
     let mut week_row = vec![Cell::from(" ")];
@@ -240,10 +238,10 @@ pub fn render_month<'a>(
             weeks.push(Row::new(week_row));
             week_row = vec![Cell::from(" ")];
         }
-        day = day.succ();
+        day = day.succ_opt().ok_or("No succeding day to {day}")?;
     }
     weeks.push(Row::new(week_row));
-    Table::new(weeks)
+    Ok(Table::new(weeks)
         .block(
             Block::default()
                 .title(format!("{} {}", selected_day.month(), selected_day.year()))
@@ -264,7 +262,7 @@ pub fn render_month<'a>(
             Constraint::Min(2),
             Constraint::Min(2),
             Constraint::Min(0),
-        ])
+        ]))
 }
 
 pub fn draw_rosary(
@@ -369,7 +367,7 @@ pub fn draw_calendar(
         .unwrap();
     let al = AnnusLiturgicus::new(selected_day.year())?;
     rect.render_widget(render_calendar(&al, selected_day, today, window), split[0]);
-    rect.render_widget(render_month(&al, selected_day, today, window), split[1]);
+    rect.render_widget(render_month(&al, selected_day, today, window)?, split[1]);
     Ok(())
 }
 
@@ -387,8 +385,16 @@ pub fn redraw(
 ) -> Result<(), Box<dyn Error>> {
     terminal.draw(|rect| {
         let mut chunk: Rect = rect.size();
-        redraw_recursive(&mut frame.ws, rect, &mut chunk);
-        draw_frame_popup(frame, rect, &mut chunk);
+        //TODO Handle main error
+        let e = redraw_recursive(&mut frame.ws, rect, &mut chunk);
+        if e.is_err() {
+            frame
+                .get_active_window()
+                .set_error(e.unwrap_err().to_string());
+            draw_error_popup(frame, rect, &mut chunk);
+        } else {
+            draw_frame_popup(frame, rect, &mut chunk);
+        }
     })?;
     // let chunks: Layout = Layout::default()
     //     .direction(Direction::Vertical)
@@ -410,7 +416,7 @@ fn redraw_recursive(
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(*chunk);
-            redraw_recursive(v, rect, &mut hlayout[0]);
+            redraw_recursive(v, rect, &mut hlayout[0])?;
             redraw_recursive(w, rect, &mut hlayout[1])
         }
         WindowStack::VSplit(v, w) => {
@@ -419,7 +425,7 @@ fn redraw_recursive(
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(*chunk);
-            redraw_recursive(v, rect, &mut vlayout[0]);
+            redraw_recursive(v, rect, &mut vlayout[0])?;
             redraw_recursive(w, rect, &mut vlayout[1])
         }
     }
@@ -437,6 +443,6 @@ fn redraw_window(
         MenuItem::Quit => Ok(()),
         MenuItem::_NOQUIT => Ok(()),
         MenuItem::PrayerSet(_) => draw_prayer_set(window, rect, chunk),
-    };
+    }?;
     Ok(())
 }

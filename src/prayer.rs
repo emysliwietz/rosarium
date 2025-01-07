@@ -5,7 +5,6 @@ use crate::{
     language::{get_title_translation, Language},
 };
 use rand::rngs::StdRng;
-use soloud::AudioExt;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
@@ -24,7 +23,7 @@ pub trait Prayer {
         }
     }
 
-    fn load_fallback_prayer_audio(&self, lan: &Language) -> Option<String> {
+    fn load_fallback_prayer_audio(&self, _lan: &Language) -> Option<String> {
         for lan in Language::VALUES.iter() {
             let audio_file = PRAYER_DIR.to_owned()
                 + "/"

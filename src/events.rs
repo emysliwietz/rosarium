@@ -82,7 +82,10 @@ pub fn general_input_handler<'a>(
             }
         }
         KeyCode::Char('p') => {
-            frame.toggle_audio();
+            let error = frame.toggle_audio();
+            if error.is_err() {
+                return (frame, Err(error.unwrap_err()));
+            }
         }
         _ => return (frame, Ok(MenuItem::_NOQUIT)),
     }
@@ -113,8 +116,8 @@ pub fn volume_input_handler<'a>(
         KeyCode::Char('8') => frame.set_volume(80),
         KeyCode::Char('9') => frame.set_volume(90),
         KeyCode::Char('0') => frame.set_volume(100),
-        _ => {}
-    }
+        _ => Ok({}),
+    }?;
     redraw(terminal, frame)?;
     Ok(Some(frame.get_active_window_ro().active_menu_item()))
 }

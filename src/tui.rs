@@ -25,6 +25,7 @@ pub enum ErrorString {
     Error(&'static str),
 }
 pub type E = Box<dyn Error>;
+pub type R = Result<(), E>;
 
 pub fn e(s: &'static str) -> E {
     Box::new(ErrorString::Error(s))
@@ -147,7 +148,7 @@ impl Frame {
         w.is_active = true;
         let ws = WindowStack::Node(w);
         let (tx, rx) = mpsc::channel();
-        audio_thread(rx);
+        audio_thread(rx)?;
         Ok(Frame {
             ws,
             tx,
@@ -164,23 +165,26 @@ impl Frame {
         self.volume
     }
 
-    pub fn lower_volume(&mut self) {
+    pub fn lower_volume(&mut self) -> R {
         if self.volume >= 0.01 {
             self.volume -= 0.01;
-            self.tx.send(AudioCommand::SetVolume(self.volume));
+            self.tx.send(AudioCommand::SetVolume(self.volume))?;
         }
+        Ok(())
     }
 
-    pub fn raise_volume(&mut self) {
+    pub fn raise_volume(&mut self) -> R {
         if self.volume < 1.00 {
             self.volume += 0.01;
-            self.tx.send(AudioCommand::SetVolume(self.volume));
+            self.tx.send(AudioCommand::SetVolume(self.volume))?;
         }
+        Ok(())
     }
 
-    pub fn set_volume(&mut self, percentage: u8) {
+    pub fn set_volume(&mut self, percentage: u8) -> R {
         self.volume = percentage as f32 / 100.0;
-        self.tx.send(AudioCommand::SetVolume(self.volume));
+        self.tx.send(AudioCommand::SetVolume(self.volume))?;
+        Ok(())
     }
 
     fn toggle_popup(&mut self, p: Popup) {
@@ -239,16 +243,17 @@ impl Frame {
         }
     }
 
-    pub fn toggle_audio(&mut self) {
+    pub fn toggle_audio(&mut self) -> R {
         let caw = self.get_active_window();
         if caw.audio.is_some() {
             let audio = caw.audio.as_ref().unwrap().to_owned();
             caw.is_playing = true;
-            self.tx.send(AudioCommand::Play(audio));
+            self.tx.send(AudioCommand::Play(audio))?;
         } else {
             caw.is_playing = false;
-            self.tx.send(AudioCommand::Pause);
+            self.tx.send(AudioCommand::Pause)?;
         }
+        Ok(())
     }
 }
 
@@ -266,15 +271,12 @@ pub struct Window {
     pub is_active: bool,
     pub rosary: Rosary,
     pub prayersets: Vec<PrayerSet>,
-    rng: StdRng,
+    _rng: StdRng,
 }
 
 impl Window {
     pub fn new() -> Result<Window, E> {
-        let today = chrono::offset::Local::now()
-            .date()
-            .naive_local()
-            .num_days_from_ce() as u64;
+        let today = chrono::offset::Local::now().date_naive().num_days_from_ce() as u64;
         let mut rng = StdRng::seed_from_u64(today);
 
         let mut prayersets = vec![];
@@ -294,7 +296,7 @@ impl Window {
             audio: None,
             rosary: Rosary::new(),
             prayersets,
-            rng,
+            _rng: rng,
         })
     }
     pub fn active_menu_item(&self) -> MenuItem {
@@ -402,9 +404,6 @@ impl Window {
                 self.lang = Language::SLAVONICA;
             }
             Language::SLAVONICA => {
-                self.lang = Language::GERMANA;
-            }
-            _ => {
                 self.lang = Language::GERMANA;
             }
         }
