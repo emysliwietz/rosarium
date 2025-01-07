@@ -385,7 +385,6 @@ pub fn redraw(
 ) -> Result<(), Box<dyn Error>> {
     terminal.draw(|rect| {
         let mut chunk: Rect = rect.size();
-        //TODO Handle main error
         let e = redraw_recursive(&mut frame.ws, rect, &mut chunk);
         if e.is_err() {
             frame
