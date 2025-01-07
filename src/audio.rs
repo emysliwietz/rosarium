@@ -1,6 +1,6 @@
 use std::{error::Error, path::Path, sync::mpsc::Receiver, thread, time::Duration};
 
-use soloud::{AudioExt, Handle, LoadExt, Soloud, Wav, WavStream};
+use soloud::{AudioExt, Handle, LoadExt, Soloud, Wav};
 
 use crate::tui::ErrorString;
 
