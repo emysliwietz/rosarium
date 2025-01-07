@@ -2,8 +2,6 @@ use std::{error::Error, path::Path, sync::mpsc::Receiver, thread, time::Duration
 
 use soloud::{AudioExt, Handle, LoadExt, Soloud, Wav};
 
-use crate::tui::ErrorString;
-
 pub enum AudioCommand {
     Play(String),
     Pause,
@@ -41,9 +39,7 @@ pub fn audio_thread(mut rx: Receiver<AudioCommand>) -> Result<(), Box<dyn Error>
                 };
             }
         })?;
-    Err(Box::new(ErrorString::Error(
-        "Audio player stopped unexpectedly",
-    )))
+    Ok(())
 }
 
 pub fn play_audio(
