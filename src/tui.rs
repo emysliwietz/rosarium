@@ -23,6 +23,26 @@ use tui::{backend::CrosstermBackend, Terminal};
 use crate::language::Language::LATINA;
 use crate::render::redraw;
 
+#[derive(Debug)]
+pub enum ErrorString {
+    Error(&'static str),
+}
+pub type E = Box<dyn Error>;
+
+pub fn e(s: &'static str) -> E {
+    Box::new(ErrorString::Error(s))
+}
+
+impl std::fmt::Display for ErrorString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ErrorString::Error(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+impl std::error::Error for ErrorString {}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MenuItem {
     _NOQUIT,
@@ -54,6 +74,7 @@ pub enum Popup {
     Error,
 }
 
+#[derive(Debug)]
 pub struct Frame {
     pub ws: WindowStack,
     tx: Sender<AudioCommand>,
@@ -61,8 +82,8 @@ pub struct Frame {
     volume: f32,
 }
 
-fn new_ws_box() -> Box<WindowStack> {
-    Box::from(WindowStack::Node(Window::new()))
+fn new_ws_box() -> Result<Box<WindowStack>, E> {
+    Ok(Box::from(WindowStack::Node(Window::new()?)))
 }
 
 pub fn _get_active_window(s: &mut WindowStack) -> Option<&mut Window> {
@@ -124,18 +145,18 @@ pub fn _get_active_window_read_only(s: &WindowStack) -> Option<&Window> {
 }
 
 impl Frame {
-    pub fn new() -> Frame {
-        let mut w = Window::new();
+    pub fn new() -> Result<Frame, E> {
+        let mut w = Window::new()?;
         w.is_active = true;
         let ws = WindowStack::Node(w);
         let (tx, rx) = mpsc::channel();
         audio_thread(rx);
-        Frame {
+        Ok(Frame {
             ws,
             tx,
             popup: None,
             volume: 1.0,
-        }
+        })
     }
 
     pub fn get_popup(&self) -> Option<&Popup> {
@@ -189,14 +210,36 @@ impl Frame {
         return _get_active_window_read_only(&self.ws).unwrap();
     }
 
-    pub fn vsplit(mut self) -> Frame {
-        self.ws = WindowStack::VSplit(Box::from(self.ws), new_ws_box());
-        self
+    pub fn vsplit(mut self) -> (Frame, Result<(), E>) {
+        let ws_box = new_ws_box();
+        if ws_box.is_err() {
+            return (self, Err(ws_box.unwrap_err()));
+        }
+        let ws_box = ws_box.unwrap();
+        self.ws = WindowStack::VSplit(Box::from(self.ws), ws_box);
+        (self, Ok(()))
     }
 
-    pub fn hsplit(mut self) -> Frame {
-        self.ws = WindowStack::HSplit(Box::from(self.ws), new_ws_box());
-        self
+    pub fn hsplit(mut self) -> (Frame, Result<(), E>) {
+        let ws_box = new_ws_box();
+        if ws_box.is_err() {
+            return (self, Err(ws_box.unwrap_err()));
+        }
+        let ws_box = ws_box.unwrap();
+        self.ws = WindowStack::HSplit(Box::from(self.ws), ws_box);
+        (self, Ok(()))
+    }
+
+    pub fn set_error(&mut self, error: String) {
+        self.popup = Some(Popup::Error);
+        self.get_active_window().last_error = error;
+    }
+
+    pub fn check_error(&mut self) {
+        let le = self.get_active_window().last_error.clone();
+        if le != "" {
+            self.set_error(le);
+        }
     }
 
     pub fn toggle_audio(&mut self) {
@@ -219,7 +262,7 @@ pub struct Window {
     lang: Language,
     parent_h: u16,
     parent_w: u16,
-    last_error: String,
+    pub last_error: String,
     item: MenuItem,
     is_playing: bool,
     pub audio: Option<String>,
@@ -230,7 +273,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new() -> Window {
+    pub fn new() -> Result<Window, E> {
         let today = chrono::offset::Local::now()
             .date()
             .naive_local()
@@ -238,10 +281,10 @@ impl Window {
         let mut rng = StdRng::seed_from_u64(today);
 
         let mut prayersets = vec![];
-        for (title, yaml) in get_all_prayset_titles() {
-            prayersets.push(PrayerSet::new(title, yaml, &mut rng))
+        for (title, yaml) in get_all_prayset_titles()? {
+            prayersets.push(PrayerSet::new(title, yaml, &mut rng)?)
         }
-        Window {
+        Ok(Window {
             x: 0,
             y: 0,
             lang: LATINA,
@@ -255,7 +298,7 @@ impl Window {
             rosary: Rosary::new(),
             prayersets,
             rng,
-        }
+        })
     }
     pub fn active_menu_item(&self) -> MenuItem {
         return self.item;
@@ -287,6 +330,10 @@ impl Window {
         } else {
             ((self.parent_w as usize - content_width) / 2) as usize
         }
+    }
+
+    pub fn set_error(&mut self, error: String) {
+        self.last_error = error;
     }
 
     pub fn down(&mut self) {
@@ -346,10 +393,6 @@ impl Window {
         self.last_error = String::from("");
     }
 
-    pub fn set_error(&mut self, error: String) {
-        self.last_error = error;
-    }
-
     pub fn cycle_language(&mut self) {
         match self.lang {
             Language::GERMANA => {
@@ -403,9 +446,11 @@ impl Window {
         }
     }
 
-    pub fn get_curr_prayer_set(&mut self) -> &mut PrayerSet {
+    pub fn get_curr_prayer_set(&mut self) -> Result<&mut PrayerSet, E> {
         let i = self.get_curr_prayer_set_index().unwrap_or(0);
-        self.prayersets.get_mut(i).expect("No prayer sets")
+        self.prayersets
+            .get_mut(i)
+            .ok_or(e("Can't find prayerset at current index"))
     }
 }
 
@@ -457,7 +502,11 @@ pub fn input_handler<'a>(
         }
         Event::Input(event) => {
             let (mut frame, gih) = general_input_handler(terminal, frame, &event);
-            if gih.is_none() {
+            if gih.is_err() {
+                return (frame, Err(gih.unwrap_err()));
+            }
+            let gih = gih.unwrap();
+            if gih == MenuItem::_NOQUIT {
                 let popup_new_menu_item = popup_input_handler(terminal, &mut frame, &event);
                 if popup_new_menu_item.is_err() {
                     return (frame, Err(popup_new_menu_item.unwrap_err()));
@@ -485,7 +534,7 @@ pub fn input_handler<'a>(
                     _ => (frame, Ok(ami)),
                 }
             } else {
-                (frame, gih.ok_or(Box::new(InvalidFocusError)))
+                (frame, Ok(gih))
             }
         }
         Event::Tick => (frame, Ok(MenuItem::_NOQUIT)),
@@ -499,9 +548,7 @@ pub fn key_listen<'a>(
 ) -> (Frame, MenuItem) {
     let (mut frame, new_menu_item) = input_handler(&rx, terminal, frame);
     if new_menu_item.is_err() {
-        frame
-            .get_active_window()
-            .set_error("Unable to read key.".to_owned());
+        frame.set_error(new_menu_item.unwrap_err().to_string());
         let ami = frame.get_active_window().active_menu_item();
         return (frame, ami);
     }

@@ -1,5 +1,6 @@
 use crate::config_parse::get_order;
 use crate::rosary::RosaryPrayer;
+use crate::tui::{e, E};
 use crate::{
     config::PRAYER_DIR,
     language::{get_title_translation, Language},
@@ -159,12 +160,12 @@ pub struct PrayerSet {
 }
 
 impl PrayerSet {
-    pub fn new(title: String, y: Yaml, rng: &mut StdRng) -> PrayerSet {
-        PrayerSet {
+    pub fn new(title: String, y: Yaml, rng: &mut StdRng) -> Result<PrayerSet, E> {
+        Ok(PrayerSet {
             title,
             curr_prayer: 0,
-            prayers: get_order(rng, &y),
-        }
+            prayers: get_order(rng, &y)?,
+        })
     }
 
     pub fn get_title(&self, lan: &Language) -> String {

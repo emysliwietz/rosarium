@@ -1,5 +1,6 @@
 use std::fs::read_to_string;
 
+use crate::tui::{e, ErrorString, E};
 use chrono::Datelike;
 use linked_hash_map::LinkedHashMap;
 use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
@@ -7,19 +8,13 @@ use yaml_rust::{Yaml, YamlLoader};
 
 use crate::prayer::{Prayer, _Prayer};
 
-const E: &str = "Malformed YAML";
+const Y: &str = "Malformed YAML";
 type PrayerList = Vec<Box<dyn Prayer>>;
 
-pub fn test() {
-    let s = read_to_string("preces/.config.yaml").unwrap();
-    let y: Vec<Yaml> = YamlLoader::load_from_str(&s).unwrap();
-    println!("{:?}", y[0]["order"])
-}
-
 /// Return a list of all prayer set titles and corresponding YAML
-pub fn get_all_prayset_titles() -> Vec<(String, Yaml)> {
-    let s = read_to_string("preces/.config.yaml").unwrap();
-    let y: Vec<Yaml> = YamlLoader::load_from_str(&s).unwrap();
+pub fn get_all_prayset_titles() -> Result<Vec<(String, Yaml)>, E> {
+    let s = read_to_string("preces/.config.yaml")?;
+    let y: Vec<Yaml> = YamlLoader::load_from_str(&s)?;
     let mut titles: Vec<(String, Yaml)> = vec![];
     for i in 0..y.len() {
         let title = y[i]["title"].as_str();
@@ -27,7 +22,7 @@ pub fn get_all_prayset_titles() -> Vec<(String, Yaml)> {
             titles.push((String::from(title.unwrap()), y[i].clone()));
         }
     }
-    return titles;
+    return Ok(titles);
 }
 
 /// Return yaml page corresponding to title
@@ -41,11 +36,11 @@ pub fn get_yaml_for_title<'a>(title: &str, y: &'a Vec<Yaml>) -> Option<&'a Yaml>
 }
 
 /// Return a list of prayers as defined in "order"
-pub fn get_order(rng: &mut StdRng, y: &Yaml) -> PrayerList {
+pub fn get_order(rng: &mut StdRng, y: &Yaml) -> Result<PrayerList, E> {
     let mut order: PrayerList = vec![];
     let o = &y["order"].as_vec();
     if o.is_none() {
-        return order;
+        return Ok(order);
     }
     let o = o.unwrap();
     for p in 0..o.len() {
@@ -53,42 +48,46 @@ pub fn get_order(rng: &mut StdRng, y: &Yaml) -> PrayerList {
         if prayer.is_some() {
             order.push(Box::new(_Prayer::new(prayer.unwrap().to_string())))
         } else {
-            let prayer = o[p].as_hash().expect(E);
+            let prayer = o[p].as_hash().ok_or(e(Y))?;
             //println!("Group: {:?}", prayer);
-            order.append(&mut process_group(rng, y, prayer));
+            order.append(&mut process_group(rng, y, prayer)?);
         }
     }
-    order
+    Ok(order)
 }
 
 /// Process a prayer group definition in "order"
-pub fn process_group(rng: &mut StdRng, y: &Yaml, g: &LinkedHashMap<Yaml, Yaml>) -> PrayerList {
+pub fn process_group(
+    rng: &mut StdRng,
+    y: &Yaml,
+    g: &LinkedHashMap<Yaml, Yaml>,
+) -> Result<PrayerList, E> {
     let mut order: PrayerList = vec![];
     for (var_name, properties) in g.iter() {
-        let var_name = var_name.as_str().expect(E);
-        let group_prayers = expand_group_definition(y, var_name);
+        let var_name = var_name.as_str().ok_or(e(Y))?;
+        let group_prayers = expand_group_definition(y, var_name)?;
         order.append(&mut pick_and_apply_properties(
             rng,
             &group_prayers,
             &properties,
-        ));
+        )?);
     }
-    order
+    Ok(order)
 }
 
-pub fn expand_group_definition(y: &Yaml, g: &str) -> PrayerList {
+pub fn expand_group_definition(y: &Yaml, g: &str) -> Result<PrayerList, E> {
     let mut order: PrayerList = vec![];
     let prayers = &y["prayers"][g];
     if !prayers.is_badvalue() {
-        for prayer in prayers.as_vec().expect(E) {
+        for prayer in prayers.as_vec().ok_or(e(Y))? {
             order.push(Box::new(_Prayer::new(
-                prayer.as_str().expect(E).to_string(),
+                prayer.as_str().ok_or(e(Y))?.to_string(),
             )))
         }
     } else {
         order.push(Box::new(_Prayer::new(g.to_string())))
     }
-    order
+    Ok(order)
 }
 
 struct Properties {
@@ -101,7 +100,7 @@ struct Properties {
     chance: i64,
 }
 
-fn get_properties(group: &PrayerList, properties: &Yaml) -> Properties {
+fn get_properties(group: &PrayerList, properties: &Yaml) -> Result<Properties, E> {
     let mut count_min = group.len();
     let mut count_max = count_min;
     let _count = properties["count"].as_i64();
@@ -112,8 +111,8 @@ fn get_properties(group: &PrayerList, properties: &Yaml) -> Properties {
         let _count = properties["count"].as_str();
         if _count.is_some() {
             let _count: Vec<&str> = _count.unwrap().split("-").collect();
-            count_min = _count[0].parse().expect(E);
-            count_max = _count[1].parse().expect(E);
+            count_min = _count[0].parse()?;
+            count_max = _count[1].parse()?;
         }
     }
 
@@ -121,35 +120,35 @@ fn get_properties(group: &PrayerList, properties: &Yaml) -> Properties {
     let random = properties["random"].as_bool().unwrap_or(false);
     let chance = properties["chance"].as_i64().unwrap_or(100);
 
-    Properties {
+    Ok(Properties {
         count_min,
         count_max,
         random,
         chance,
-    }
+    })
 }
 
 pub fn pick_and_apply_properties<'a>(
     rng: &mut StdRng,
     group: &PrayerList,
     properties: &Yaml,
-) -> PrayerList {
+) -> Result<PrayerList, E> {
     let mut order: PrayerList = vec![];
-    let p = get_properties(group, properties);
+    let p = get_properties(group, properties)?;
 
     if !rng.gen_bool(p.chance as f64 / 100.0) {
-        return order;
+        return Ok(order);
     }
 
     let count: usize = rng.gen_range(p.count_min, p.count_max + 1);
 
     for i in 0..count {
         order.push(if p.random {
-            group.choose(rng).expect(E).clone()
+            group.choose(rng).ok_or(e(Y))?.clone()
         } else {
             println!("{:?}", group.len());
             group[i % group.len()].clone()
         })
     }
-    order
+    Ok(order)
 }

@@ -21,7 +21,7 @@ use tui::Terminal;
 
 pub fn render_prayer_set<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
     let language = window.get_language().clone();
-    let prayer_set = window.get_curr_prayer_set();
+    let prayer_set = window.get_curr_prayer_set()?;
     let prayer = prayer_set.to_prayer();
     let (title, text, audio) = prayer.title_text_audio(&language);
     let prayer_render = cursive_p(text, prayer_set.get_title(&language), title, window);
@@ -368,7 +368,7 @@ pub fn draw_calendar(
     let selected_day = today
         .checked_add_signed(Duration::days(day_offset.into()))
         .unwrap();
-    let al = AnnusLiturgicus::new(selected_day.year());
+    let al = AnnusLiturgicus::new(selected_day.year())?;
     rect.render_widget(render_calendar(&al, selected_day, today, window), split[0]);
     rect.render_widget(render_month(&al, selected_day, today, window), split[1]);
     Ok(())

@@ -1,6 +1,6 @@
 use crate::{
     render::{redraw, refresh},
-    tui::{Event, Frame, MenuItem},
+    tui::{e, Event, Frame, MenuItem, E},
 };
 use crossterm::event::KeyEvent;
 use crossterm::{event::KeyCode, terminal::disable_raw_mode};
@@ -45,20 +45,20 @@ pub fn general_input_handler<'a>(
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     mut frame: Frame,
     event: &KeyEvent,
-) -> (Frame, Option<MenuItem>) {
+) -> (Frame, Result<MenuItem, E>) {
     match event.code {
         KeyCode::Char('q') => {
             let a = disable_raw_mode();
             let b = terminal.show_cursor();
             if a.is_err() || b.is_err() {
-                return (frame, None);
+                return (frame, Err(Box::new(a.unwrap_err())));
             }
-            return (frame, Some(MenuItem::Quit));
+            return (frame, Ok(MenuItem::Quit));
         }
         KeyCode::Char('r') => {
             let a = refresh(terminal, &mut frame);
             if a.is_err() {
-                return (frame, None);
+                return (frame, Err(a.unwrap_err()));
             }
         }
 
@@ -68,19 +68,31 @@ pub fn general_input_handler<'a>(
         KeyCode::Char('x') => frame.get_active_window().cycle_language(),
         KeyCode::Char('v') => frame.toggle_volume_popup(),
         KeyCode::Char('?') => frame.toggle_keybinding_popup(),
-        KeyCode::Char('H') => frame = frame.hsplit(),
-        KeyCode::Char('L') => frame = frame.vsplit(),
+        KeyCode::Char('H') => {
+            let (f, error) = frame.hsplit();
+            frame = f;
+            if error.is_err() {
+                return (frame, Err(error.unwrap_err()));
+            }
+        }
+        KeyCode::Char('L') => {
+            let (f, error) = frame.vsplit();
+            frame = f;
+            if error.is_err() {
+                return (frame, Err(error.unwrap_err()));
+            }
+        }
         KeyCode::Char('p') => {
             frame.toggle_audio();
         }
-        _ => return (frame, None),
+        _ => return (frame, Ok(MenuItem::_NOQUIT)),
     }
     let a = redraw(terminal, &mut frame);
     if a.is_err() {
-        return (frame, None);
+        return (frame, Err(a.unwrap_err()));
     }
     let active_menu_item = frame.get_active_window().active_menu_item();
-    (frame, Some(active_menu_item))
+    (frame, Ok(active_menu_item))
 }
 
 pub fn volume_input_handler<'a>(
@@ -149,12 +161,12 @@ pub fn prayer_set_input_handler<'a>(
     event: &KeyEvent,
 ) -> Result<MenuItem, Box<dyn Error>> {
     match event.code {
-        KeyCode::Char(' ') => frame.get_active_window().get_curr_prayer_set().advance(),
-        KeyCode::Char('l') => frame.get_active_window().get_curr_prayer_set().advance(),
-        KeyCode::Char('h') => frame.get_active_window().get_curr_prayer_set().recede(),
-        KeyCode::Left => frame.get_active_window().get_curr_prayer_set().recede(),
-        KeyCode::Right => frame.get_active_window().get_curr_prayer_set().advance(),
-        KeyCode::Backspace => frame.get_active_window().get_curr_prayer_set().recede(),
+        KeyCode::Char(' ') => frame.get_active_window().get_curr_prayer_set()?.advance(),
+        KeyCode::Char('l') => frame.get_active_window().get_curr_prayer_set()?.advance(),
+        KeyCode::Char('h') => frame.get_active_window().get_curr_prayer_set()?.recede(),
+        KeyCode::Left => frame.get_active_window().get_curr_prayer_set()?.recede(),
+        KeyCode::Right => frame.get_active_window().get_curr_prayer_set()?.advance(),
+        KeyCode::Backspace => frame.get_active_window().get_curr_prayer_set()?.recede(),
         _ => {}
     }
     redraw(terminal, frame)?;

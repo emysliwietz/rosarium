@@ -3,6 +3,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crossterm::terminal::disable_raw_mode;
 use crossterm::{
     event::{self, Event as CEvent},
     terminal::enable_raw_mode,
@@ -19,9 +20,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     stdout()
         .execute(event::EnableMouseCapture)
         .expect("No mouse capture support");
-    enable_raw_mode().expect("can run in raw mode");
+    enable_raw_mode().expect("can not run in raw mode");
 
-    let mut frame = Frame::new();
+    let mut frame = Frame::new()?;
 
     // Event loop
     let (tx, rx) = mpsc::channel();
@@ -67,7 +68,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let (f, q) = key_listen(&rx, &mut terminal, frame);
         frame = f;
+        //implement error handling
         if q == MenuItem::Quit {
+            std::io::stdout()
+                .execute(event::DisableMouseCapture)
+                .expect("No mouse capture support");
+            disable_raw_mode().expect("can not run in raw mode");
             break;
         }
     }
