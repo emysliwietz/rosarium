@@ -1,12 +1,11 @@
 use crate::{
     render::{redraw, refresh},
-    tui::{e, Event, Frame, MenuItem, E},
+    tui::{Frame, MenuItem, E},
 };
 use crossterm::event::KeyEvent;
 use crossterm::{event::KeyCode, terminal::disable_raw_mode};
 use std::error::Error;
 use std::io::Stdout;
-use std::sync::mpsc::Receiver;
 use tui::{backend::CrosstermBackend, Terminal};
 
 pub fn get_keybindings(f: &Frame) -> String {

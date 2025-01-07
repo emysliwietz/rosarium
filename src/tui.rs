@@ -10,13 +10,10 @@ use chrono::Datelike;
 use crossterm::event::KeyEvent;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use soloud::{AudioExt, LoadExt, Soloud, Speech, Wav, WavStream};
 
-use std::borrow::Borrow;
 use std::error::Error;
 use std::fmt;
 use std::io::Stdout;
-use std::path::Path;
 use std::sync::mpsc::{self, Receiver, Sender};
 use tui::{backend::CrosstermBackend, Terminal};
 
@@ -465,10 +462,10 @@ impl fmt::Display for InvalidFocusError {
 
 pub fn popup_input_handler(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    mut frame: &mut Frame,
+    frame: &mut Frame,
     event: &KeyEvent,
 ) -> Result<Option<MenuItem>, Box<dyn Error>> {
-    let mut popup = frame.get_popup();
+    let popup = frame.get_popup();
     if popup.is_none() {
         return Ok(None);
     }

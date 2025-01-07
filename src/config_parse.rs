@@ -1,9 +1,8 @@
 use std::fs::read_to_string;
 
-use crate::tui::{e, ErrorString, E};
-use chrono::Datelike;
+use crate::tui::{e, E};
 use linked_hash_map::LinkedHashMap;
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
+use rand::{rngs::StdRng, seq::SliceRandom, Rng};
 use yaml_rust::{Yaml, YamlLoader};
 
 use crate::prayer::{Prayer, _Prayer};

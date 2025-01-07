@@ -1,14 +1,11 @@
 use crate::config_parse::get_order;
-use crate::rosary::RosaryPrayer;
-use crate::tui::{e, E};
+use crate::tui::E;
 use crate::{
     config::PRAYER_DIR,
     language::{get_title_translation, Language},
-    tui::Window,
 };
-use chrono::Datelike;
-use rand::{rngs::StdRng, seq::SliceRandom, thread_rng, SeedableRng};
-use soloud::{audio, AudioExt, LoadExt, Wav, WavStream};
+use rand::rngs::StdRng;
+use soloud::AudioExt;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;

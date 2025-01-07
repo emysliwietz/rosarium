@@ -1,6 +1,6 @@
 use crate::rosary::Mysteries;
 use crate::rosary::Mysteries::{Glorious, Joyful, Luminous, Sorrowful};
-use crate::tui::{e, ErrorString, E};
+use crate::tui::{e, E};
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Weekday};
 
 pub fn weekday() -> &'static str {

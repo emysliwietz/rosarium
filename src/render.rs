@@ -1,21 +1,20 @@
 use crate::calender::AnnusLiturgicus;
 use crate::events::get_keybindings;
-use crate::language::{self, get_title_translation};
+use crate::language::{get_title_translation};
 
 use crate::rosary::get_daily_mystery;
 use crate::tui::{Frame, MenuItem, Popup, Window, WindowStack};
 use crate::tui_util::{centered_rect, cursive_p, hcenter};
-use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveDateTime, Weekday};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Weekday};
 use std::error::Error;
 use std::io::Stdout;
-use std::ops::Add;
 use tui::backend::CrosstermBackend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Text;
 use tui::widgets::{
-    Block, BorderType, Borders, Cell, Clear, Gauge, LineGauge, List, ListItem, Paragraph, Row,
-    Table, Widget, Wrap,
+    Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row,
+    Table, Wrap,
 };
 use tui::Terminal;
 

@@ -1,5 +1,4 @@
 use crate::config::{PRAYER_DIR, TITLE_FILE};
-use crate::tui::Window;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
