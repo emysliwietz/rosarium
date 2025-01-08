@@ -3,7 +3,7 @@ use std::fs;
 
 use crate::calender::get_daily_mystery_enum;
 use crate::prayer::Prayer;
-use tui::style::Color;
+use ratatui::style::Color;
 
 use crate::config::{INITIUM_FILE, MYSTERY_DIR, PRAYER_DIR};
 use crate::language::{get_title_translation, ordinal_n_acc, ordinal_n_acc_upper, ordinal_n_gen};

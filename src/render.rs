@@ -6,14 +6,16 @@ use crate::rosary::get_daily_mystery;
 use crate::tui::{Frame, MenuItem, Popup, Window, WindowStack};
 use crate::tui_util::{centered_rect, cursive_p, hcenter};
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Weekday};
+use ratatui::backend::CrosstermBackend;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::Text;
+use ratatui::widgets::{
+    Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap,
+};
+use ratatui::Terminal;
 use std::error::Error;
 use std::io::Stdout;
-use tui::backend::CrosstermBackend;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Modifier, Style};
-use tui::text::Text;
-use tui::widgets::{Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap};
-use tui::Terminal;
 
 pub fn render_prayer_set<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
     let language = window.get_language().clone();
@@ -39,14 +41,14 @@ pub fn render_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn E
         Text::raw(String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset));
     let prayer_width = centered_prayer_text.width();
     if rosary_prayer.is_mystery() {
-        centered_prayer_text.patch_style(
+        centered_prayer_text = centered_prayer_text.patch_style(
             Style::default()
                 .remove_modifier(Modifier::ITALIC)
                 .add_modifier(Modifier::BOLD)
                 .fg(rosary_prayer.to_color()),
         );
     } else {
-        centered_prayer_text.patch_style(
+        centered_prayer_text = centered_prayer_text.patch_style(
             Style::default()
                 .remove_modifier(Modifier::ITALIC)
                 .add_modifier(Modifier::BOLD)
@@ -267,7 +269,7 @@ pub fn render_month<'a>(
 
 pub fn draw_rosary(
     window: &mut Window,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    rect: &mut ratatui::Frame,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
     let main_split = Layout::default()
@@ -293,7 +295,7 @@ pub fn draw_rosary(
 
 pub fn draw_prayer_set(
     window: &mut Window,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    rect: &mut ratatui::Frame,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
     let prayer_window = render_prayer_set(window);
@@ -306,11 +308,7 @@ pub fn draw_prayer_set(
     Ok(())
 }
 
-pub fn draw_frame_popup(
-    frame: &mut Frame,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
-    chunk: &mut Rect,
-) {
+pub fn draw_frame_popup(frame: &mut Frame, rect: &mut ratatui::Frame, chunk: &mut Rect) {
     if frame.get_popup().is_none() {
         return;
     }
@@ -321,31 +319,19 @@ pub fn draw_frame_popup(
     }
 }
 
-pub fn draw_keybinding_popup(
-    frame: &mut Frame,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
-    chunk: &mut Rect,
-) {
+pub fn draw_keybinding_popup(frame: &mut Frame, rect: &mut ratatui::Frame, chunk: &mut Rect) {
     let popup_chunk = centered_rect(80, 60, 10, chunk);
     rect.render_widget(Clear, popup_chunk);
     rect.render_widget(render_keybindings(frame), popup_chunk);
 }
 
-pub fn draw_error_popup(
-    frame: &mut Frame,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
-    chunk: &mut Rect,
-) {
+pub fn draw_error_popup(frame: &mut Frame, rect: &mut ratatui::Frame, chunk: &mut Rect) {
     let popup_chunk = centered_rect(80, 60, 10, chunk);
     rect.render_widget(Clear, popup_chunk);
     rect.render_widget(render_error(frame), popup_chunk);
 }
 
-pub fn draw_volume_popup(
-    frame: &mut Frame,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
-    chunk: &mut Rect,
-) {
+pub fn draw_volume_popup(frame: &mut Frame, rect: &mut ratatui::Frame, chunk: &mut Rect) {
     let popup_chunk = centered_rect(80, 1, 3, chunk);
     rect.render_widget(Clear, popup_chunk);
     rect.render_widget(render_volume(frame), popup_chunk);
@@ -353,7 +339,7 @@ pub fn draw_volume_popup(
 
 pub fn draw_calendar(
     window: &mut Window,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    rect: &mut ratatui::Frame,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
     let split = Layout::default()
@@ -404,7 +390,7 @@ pub fn redraw(
 
 fn redraw_recursive(
     ws: &mut WindowStack,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    rect: &mut ratatui::Frame,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
     match ws {
@@ -432,7 +418,7 @@ fn redraw_recursive(
 
 fn redraw_window(
     window: &mut Window,
-    rect: &mut tui::Frame<CrosstermBackend<Stdout>>,
+    rect: &mut ratatui::Frame,
     chunk: &mut Rect,
 ) -> Result<(), Box<dyn Error>> {
     match window.active_menu_item() {

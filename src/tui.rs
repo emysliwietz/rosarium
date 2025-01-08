@@ -11,11 +11,11 @@ use crossterm::event::KeyEvent;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::error::Error;
 use std::fmt;
 use std::io::Stdout;
 use std::sync::mpsc::{self, Receiver, Sender};
-use tui::{backend::CrosstermBackend, Terminal};
 
 use crate::language::Language::LATINA;
 use crate::render::redraw;

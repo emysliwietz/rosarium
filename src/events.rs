@@ -4,9 +4,9 @@ use crate::{
 };
 use crossterm::event::KeyEvent;
 use crossterm::{event::KeyCode, terminal::disable_raw_mode};
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::error::Error;
 use std::io::Stdout;
-use tui::{backend::CrosstermBackend, Terminal};
 
 pub fn get_keybindings(f: &Frame) -> String {
     let mut keybinds = String::from(

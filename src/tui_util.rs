@@ -1,4 +1,4 @@
-use tui::{
+use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Text,
@@ -16,7 +16,7 @@ pub fn paragraph<'a>(text: String, title: &str, w: &mut Window) -> Paragraph<'a>
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
                 .title(get_title_translation(title, w.get_language()))
-                .border_type(tui::widgets::BorderType::Rounded),
+                .border_type(ratatui::widgets::BorderType::Rounded),
         )
 }
 
@@ -26,7 +26,7 @@ pub fn cursive<'a>(p: Paragraph) -> Paragraph {
 
 pub fn title_from_s<'a>(t: String, w: &Window) -> Text<'a> {
     let mut t = Text::from(hcenter(&String::from("\n".to_owned() + &t), w));
-    t.patch_style(
+    t = t.patch_style(
         Style::default()
             .remove_modifier(Modifier::ITALIC)
             .add_modifier(Modifier::BOLD)
@@ -43,7 +43,7 @@ pub fn cursive_p<'a>(
 ) -> Paragraph<'a> {
     let title = title_from_s(title, w);
     let mut text = Text::from(hcenter(&text, w));
-    text.patch_style(
+    text = text.patch_style(
         Style::default()
             .add_modifier(Modifier::ITALIC)
             .remove_modifier(Modifier::BOLD)
@@ -75,7 +75,7 @@ pub fn combine_to_p<'a>(
     title.extend(p);
     title.extend(text);
     Paragraph::new(title)
-        .alignment(tui::layout::Alignment::Left)
+        .alignment(ratatui::layout::Alignment::Left)
         .wrap(Wrap { trim: false })
         .scroll(w.get_offset())
         .block(
@@ -83,7 +83,7 @@ pub fn combine_to_p<'a>(
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
                 .title(border_title)
-                .border_type(tui::widgets::BorderType::Rounded),
+                .border_type(ratatui::widgets::BorderType::Rounded),
         )
 }
 
