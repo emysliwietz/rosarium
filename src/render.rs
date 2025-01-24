@@ -187,18 +187,29 @@ pub fn render_calendar<'a>(
         }
         i += 1;
     }
-    Table::new(items)
-        .block(
-            Block::default()
-                .title("Calendar")
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
-        )
-        .style(Style::default().fg(Color::White))
-        .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-        .highlight_symbol(">>")
-        .header(Row::new(vec!["Date".to_owned(), "Name".to_owned()]).bottom_margin(1))
-        .widths(&[Constraint::Min(12), Constraint::Min(30)])
+    // Table::new(items)
+    //     .block(
+    //         Block::default()
+    //             .title("Calendar")
+    //             .borders(Borders::ALL)
+    //             .border_type(BorderType::Rounded),
+    //     )
+    //     .style(Style::default().fg(Color::White))
+    //     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+    //     .highlight_symbol(">>")
+    //     .header(Row::new(vec!["Date".to_owned(), "Name".to_owned()]).bottom_margin(1))
+    //     .widths(&[Constraint::Min(12), Constraint::Min(30)])
+    // Sample data for the table
+    let row: Row = Row::new(vec!["c1"]);
+    Table::new(
+        vec![row],
+        [
+            // + 1 is for padding.
+            Constraint::Length(1),
+            Constraint::Min(1),
+            Constraint::Min(2),
+        ],
+    )
 }
 
 pub fn render_month<'a>(
@@ -243,28 +254,39 @@ pub fn render_month<'a>(
         day = day.succ_opt().ok_or("No succeding day to {day}")?;
     }
     weeks.push(Row::new(week_row));
-    Ok(Table::new(weeks)
-        .block(
-            Block::default()
-                .title(format!("{} {}", selected_day.month(), selected_day.year()))
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
-        )
-        .style(Style::default().fg(Color::White))
-        .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-        .highlight_symbol(">>")
-        .header(Row::new(vec!["", "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", ""]).bottom_margin(1))
-        .widths(&[
-            Constraint::Max(1),
+
+    Ok(Table::new(
+        vec![Row::new(vec!["todo 1", "b", "c"])],
+        [
+            // + 1 is for padding.
+            Constraint::Length(1),
+            Constraint::Min(1),
             Constraint::Min(2),
-            Constraint::Min(2),
-            Constraint::Min(2),
-            Constraint::Min(2),
-            Constraint::Min(2),
-            Constraint::Min(2),
-            Constraint::Min(2),
-            Constraint::Min(0),
-        ]))
+        ],
+    ))
+
+    // Ok(Table::new(weeks)
+    //     .block(
+    //         Block::default()
+    //             .title(format!("{} {}", selected_day.month(), selected_day.year()))
+    //             .borders(Borders::ALL)
+    //             .border_type(BorderType::Rounded),
+    //     )
+    //     .style(Style::default().fg(Color::White))
+    //     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+    //     .highlight_symbol(">>")
+    //     .header(Row::new(vec!["", "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", ""]).bottom_margin(1))
+    //     .widths(&[
+    //         Constraint::Max(1),
+    //         Constraint::Min(2),
+    //         Constraint::Min(2),
+    //         Constraint::Min(2),
+    //         Constraint::Min(2),
+    //         Constraint::Min(2),
+    //         Constraint::Min(2),
+    //         Constraint::Min(2),
+    //         Constraint::Min(0),
+    //     ]))
 }
 
 pub fn draw_rosary(
@@ -352,8 +374,16 @@ pub fn draw_calendar(
         .checked_add_signed(Duration::days(day_offset.into()))
         .unwrap();
     let al = AnnusLiturgicus::new(selected_day.year())?;
-    rect.render_widget(render_calendar(&al, selected_day, today, window), split[0]);
-    rect.render_widget(render_month(&al, selected_day, today, window)?, split[1]);
+    rect.render_stateful_widget(
+        render_calendar(&al, selected_day, today, window),
+        split[0],
+        &mut window.calendar_state,
+    );
+    rect.render_stateful_widget(
+        render_month(&al, selected_day, today, window)?,
+        split[1],
+        &mut window.month_state,
+    );
     Ok(())
 }
 
@@ -370,7 +400,7 @@ pub fn redraw(
     frame: &mut Frame,
 ) -> Result<(), Box<dyn Error>> {
     terminal.draw(|rect| {
-        let mut chunk: Rect = rect.size();
+        let mut chunk: Rect = rect.area();
         let e = redraw_recursive(&mut frame.ws, rect, &mut chunk);
         if e.is_err() {
             frame
@@ -396,20 +426,28 @@ fn redraw_recursive(
     match ws {
         WindowStack::Node(w) => redraw_window(w, rect, chunk),
         WindowStack::HSplit(v, w) => {
-            let mut hlayout = Layout::default()
+            let mut hlayout: Vec<_> = Layout::default()
                 .margin(1)
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(*chunk);
+                .split(*chunk)
+                .iter()
+                .copied()
+                .take(2)
+                .collect();
             redraw_recursive(v, rect, &mut hlayout[0])?;
             redraw_recursive(w, rect, &mut hlayout[1])
         }
         WindowStack::VSplit(v, w) => {
-            let mut vlayout = Layout::default()
+            let mut vlayout: Vec<_> = Layout::default()
                 .margin(1)
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(*chunk);
+                .split(*chunk)
+                .iter()
+                .copied()
+                .take(2)
+                .collect();
             redraw_recursive(v, rect, &mut vlayout[0])?;
             redraw_recursive(w, rect, &mut vlayout[1])
         }

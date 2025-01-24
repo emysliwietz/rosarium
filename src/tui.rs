@@ -11,6 +11,7 @@ use crossterm::event::KeyEvent;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
+use ratatui::widgets::TableState;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::error::Error;
 use std::fmt;
@@ -272,6 +273,8 @@ pub struct Window {
     pub rosary: Rosary,
     pub prayersets: Vec<PrayerSet>,
     _rng: StdRng,
+    pub calendar_state: TableState,
+    pub month_state: TableState,
 }
 
 impl Window {
@@ -297,6 +300,8 @@ impl Window {
             rosary: Rosary::new(),
             prayersets,
             _rng: rng,
+            calendar_state: TableState::default().with_selected(0),
+            month_state: TableState::default().with_selected(0),
         })
     }
     pub fn active_menu_item(&self) -> MenuItem {
