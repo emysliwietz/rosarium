@@ -9,13 +9,14 @@ use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Weekday};
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::Text;
+use ratatui::text::{Line, Text};
 use ratatui::widgets::{
     Block, BorderType, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap,
 };
 use ratatui::Terminal;
 use std::error::Error;
 use std::io::Stdout;
+use unicode_width::UnicodeWidthStr;
 
 pub fn render_prayer_set<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn Error>> {
     let language = window.get_language().clone();
@@ -37,9 +38,10 @@ pub fn render_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn E
     }
     let prayer_text = Text::from(prayer_words);
     let top_offset = window.get_top_offset(prayer_text.height() + 3);
-    let mut centered_prayer_text: Text =
-        Text::raw(String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset));
-    let prayer_width = centered_prayer_text.width();
+    let cpt = String::from("\n") + &prayer_title + "\n" + &"\n".repeat(top_offset);
+    let prayer_width = cpt.width();
+    let mut centered_prayer_text: Text = Text::raw(cpt);
+
     if rosary_prayer.is_mystery() {
         centered_prayer_text = centered_prayer_text.patch_style(
             Style::default()
@@ -69,6 +71,7 @@ pub fn render_prayer<'a>(window: &mut Window) -> Result<Paragraph<'a>, Box<dyn E
                         .remove_modifier(Modifier::ITALIC),
                 )
                 .title(get_title_translation("rosarium", window.get_language()))
+                .title(Line::from(window.get_language().to_string()).right_aligned())
                 .border_type(BorderType::Rounded),
         );
     Ok(if rosary_prayer.is_mystery() {
@@ -172,7 +175,7 @@ pub fn render_calendar<'a>(
     al: &AnnusLiturgicus,
     _selected_day: DateTime<Local>,
     today: DateTime<Local>,
-    window: &Window,
+    window: &mut Window,
 ) -> Table<'a> {
     let mut items = vec![];
     let mut i = 0;
@@ -181,34 +184,38 @@ pub fn render_calendar<'a>(
         al.push(("Today", today.naive_local().date()));
     }
     al.sort_by(|a, b| a.1.cmp(&b.1));
+    let mut today_index = 0;
     for (name, date) in al {
         if i >= window.get_offset().0 {
             items.push(Row::new(vec![date.to_string(), name.to_owned()]));
         }
+        if name == "Today" {
+            today_index = i;
+        }
         i += 1;
     }
-    // Table::new(items)
-    //     .block(
-    //         Block::default()
-    //             .title("Calendar")
-    //             .borders(Borders::ALL)
-    //             .border_type(BorderType::Rounded),
-    //     )
-    //     .style(Style::default().fg(Color::White))
-    //     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-    //     .highlight_symbol(">>")
-    //     .header(Row::new(vec!["Date".to_owned(), "Name".to_owned()]).bottom_margin(1))
-    //     .widths(&[Constraint::Min(12), Constraint::Min(30)])
-    // Sample data for the table
-    let row: Row = Row::new(vec!["c1"]);
+    window.calendar_state.select(Some(today_index.into()));
     Table::new(
-        vec![row],
+        items,
         [
             // + 1 is for padding.
-            Constraint::Length(1),
-            Constraint::Min(1),
-            Constraint::Min(2),
+            Constraint::Min(12),
+            Constraint::Min(30),
         ],
+    )
+    .style(Style::default().fg(Color::White))
+    .row_highlight_style(
+        Style::default()
+            .add_modifier(Modifier::ITALIC)
+            .add_modifier(Modifier::REVERSED),
+    )
+    .highlight_symbol(">>")
+    .header(Row::new(vec!["Date".to_owned(), "Name".to_owned()]).bottom_margin(1))
+    .block(
+        Block::default()
+            .title("Calendar")
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded),
     )
 }
 
@@ -256,37 +263,29 @@ pub fn render_month<'a>(
     weeks.push(Row::new(week_row));
 
     Ok(Table::new(
-        vec![Row::new(vec!["todo 1", "b", "c"])],
+        weeks,
         [
-            // + 1 is for padding.
-            Constraint::Length(1),
-            Constraint::Min(1),
+            Constraint::Max(1),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
+            Constraint::Min(2),
             Constraint::Min(2),
         ],
-    ))
-
-    // Ok(Table::new(weeks)
-    //     .block(
-    //         Block::default()
-    //             .title(format!("{} {}", selected_day.month(), selected_day.year()))
-    //             .borders(Borders::ALL)
-    //             .border_type(BorderType::Rounded),
-    //     )
-    //     .style(Style::default().fg(Color::White))
-    //     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-    //     .highlight_symbol(">>")
-    //     .header(Row::new(vec!["", "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", ""]).bottom_margin(1))
-    //     .widths(&[
-    //         Constraint::Max(1),
-    //         Constraint::Min(2),
-    //         Constraint::Min(2),
-    //         Constraint::Min(2),
-    //         Constraint::Min(2),
-    //         Constraint::Min(2),
-    //         Constraint::Min(2),
-    //         Constraint::Min(2),
-    //         Constraint::Min(0),
-    //     ]))
+    )
+    .block(
+        Block::default()
+            .title(format!("{} {}", selected_day.month(), selected_day.year()))
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded),
+    )
+    .style(Style::default().fg(Color::White))
+    .row_highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+    .highlight_symbol(">>")
+    .header(Row::new(vec!["", "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", ""]).bottom_margin(1)))
 }
 
 pub fn draw_rosary(

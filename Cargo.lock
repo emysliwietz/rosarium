@@ -921,6 +921,7 @@ dependencies = [
  "soloud",
  "thiserror",
  "tui",
+ "unicode-width 0.2.0",
  "yaml-rust",
 ]
 
